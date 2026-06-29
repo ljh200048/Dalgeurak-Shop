@@ -1,0 +1,663 @@
+import React, { useState, useMemo } from 'react';
+import { useApp } from '../context/AppContext';
+import { WorkshopClass, Booking, Notice, Review } from '../types';
+import { 
+  TrendingUp, 
+  Users, 
+  Calendar, 
+  DollarSign, 
+  Plus, 
+  Edit3, 
+  Trash2, 
+  Check, 
+  X, 
+  FileText, 
+  Sparkles, 
+  AlertCircle,
+  Clock
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+
+export default function AdminDashboardView() {
+  const { 
+    classes, 
+    bookings, 
+    reviews, 
+    notices, 
+    adminAddClass, 
+    adminUpdateClass, 
+    adminDeleteClass, 
+    adminApproveBooking, 
+    adminAttendBooking, 
+    adminCancelBooking, 
+    adminAddNotice, 
+    adminDeleteNotice, 
+    adminDeleteReview 
+  } = useApp();
+
+  const [activeTab, setActiveTab] = useState<'stats' | 'classes' | 'bookings' | 'notices' | 'reviews'>('stats');
+
+  // Dialog / Edit states
+  const [classFormOpen, setClassFormOpen] = useState(false);
+  const [editingClass, setEditingClass] = useState<WorkshopClass | null>(null);
+  
+  // New Class state
+  const [className, setClassName] = useState('');
+  const [classDesc, setClassDesc] = useState('');
+  const [classLevel, setClassLevel] = useState<'입문' | '초급' | '중급' | '고급'>('입문');
+  const [classPrice, setClassPrice] = useState(20000);
+  const [classDuration, setClassDuration] = useState('1시간 30분');
+  const [classMaxPeople, setClassMaxPeople] = useState(6);
+  const [classImageUrl, setClassImageUrl] = useState('https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&q=80&w=600');
+
+  // New Notice state
+  const [noticeTitle, setNoticeTitle] = useState('');
+  const [noticeContent, setNoticeContent] = useState('');
+  const [noticeCategory, setNoticeCategory] = useState<'공지' | '이벤트' | '클래스'>('공지');
+
+  // Computed Statistics
+  const stats = useMemo(() => {
+    const totalBookingsCount = bookings.length;
+    const activeBookings = bookings.filter(b => b.status === 'approved' || b.status === 'pending');
+    const attendedBookings = bookings.filter(b => b.status === 'attended');
+    
+    const totalSales = bookings
+      .filter(b => b.status !== 'cancelled')
+      .reduce((sum, b) => sum + b.totalPrice, 0);
+
+    // Group bookings count by class
+    const popularClassesMap: { [name: string]: number } = {};
+    bookings.forEach(b => {
+      popularClassesMap[b.className] = (popularClassesMap[b.className] || 0) + 1;
+    });
+
+    const popularClassesSorted = Object.entries(popularClassesMap)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    return {
+      totalBookingsCount,
+      activeCount: activeBookings.length,
+      attendedCount: attendedBookings.length,
+      totalSales,
+      popularClassesSorted
+    };
+  }, [bookings]);
+
+  // Handle Class Create or Update
+  const handleClassSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!className.trim() || !classDesc.trim()) {
+      alert('모든 필수 필드를 입력해주세요.');
+      return;
+    }
+
+    const classPayload = {
+      name: className,
+      description: classDesc,
+      categories: ['커스텀', '아트'],
+      level: classLevel,
+      duration: classDuration,
+      maxPeople: classMaxPeople,
+      price: classPrice,
+      imageUrl: classImageUrl,
+      intro: classDesc,
+      materials: ['기본 공방 자재 세트'],
+      provided: ['음료 서비스'],
+      completedItem: '나만의 오리지널 완성작 1종',
+      precautions: ['공구 오사용에 의한 상해에 주의하세요.'],
+      refundPolicy: '체험 3일 전 100% 환불'
+    };
+
+    try {
+      if (editingClass) {
+        await adminUpdateClass(editingClass.id, classPayload);
+        alert('클래스 정보가 성공적으로 변경되었습니다.');
+      } else {
+        await adminAddClass(classPayload);
+        alert('신규 클래스가 성공적으로 출시되었습니다.');
+      }
+      
+      // Reset Form
+      setClassFormOpen(false);
+      setEditingClass(null);
+      setClassName('');
+      setClassDesc('');
+      setPriceAndMetaDefaults();
+    } catch {
+      alert('작업 처리 중 오류가 발생했습니다.');
+    }
+  };
+
+  const setPriceAndMetaDefaults = () => {
+    setClassPrice(20000);
+    setClassDuration('1시간 30분');
+    setClassMaxPeople(6);
+  };
+
+  const handleEditClassClick = (cls: WorkshopClass) => {
+    setEditingClass(cls);
+    setClassName(cls.name);
+    setClassDesc(cls.description);
+    setClassLevel(cls.level);
+    setClassPrice(cls.price);
+    setClassDuration(cls.duration);
+    setClassMaxPeople(cls.maxPeople);
+    setClassImageUrl(cls.imageUrl);
+    setClassFormOpen(true);
+  };
+
+  const handleDeleteClassClick = async (id: string) => {
+    if (confirm('이 원데이 클래스를 상점에서 전면 영구 삭제하시겠습니까?')) {
+      await adminDeleteClass(id);
+    }
+  };
+
+  // Handle Notice Posting
+  const handleNoticeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!noticeTitle.trim() || !noticeContent.trim()) {
+      alert('제목과 내용을 모두 작성해주세요.');
+      return;
+    }
+
+    try {
+      await adminAddNotice({
+        title: noticeTitle,
+        content: noticeContent,
+        category: noticeCategory,
+        author: '점장'
+      });
+      setNoticeTitle('');
+      setNoticeContent('');
+      alert('공지사항이 정상 게시되었습니다.');
+    } catch {
+      alert('공지 게시 중 오류가 발생했습니다.');
+    }
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+      
+      {/* Title Header */}
+      <div className="space-y-2">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#A26745]/10 text-[#A26745] text-xs font-semibold uppercase">
+          <Sparkles className="w-3.5 h-3.5 animate-pulse" /> Dalgeurak Command Center
+        </span>
+        <h1 className="font-serif font-bold text-3xl text-[#2E2A27] dark:text-[#F3EFEA]">공방 통합 관리자 페이지</h1>
+        <p className="text-xs sm:text-sm text-gray-500">
+          달그락 상점의 실시간 매출, 수강생 예약 상태를 한눈에 파악하고 클래스 및 공지사항을 편리하게 관리하세요.
+        </p>
+      </div>
+
+      {/* Tabs navigation bar */}
+      <div className="border-b border-[#F6EFE7] dark:border-[#3D3530] flex gap-2 overflow-x-auto scrollbar-none pb-0.5">
+        {[
+          { id: 'stats', label: '📊 종합 분석 대시보드' },
+          { id: 'classes', label: '🎨 클래스 상품 관리' },
+          { id: 'bookings', label: '📅 수강 예약 승인/출석' },
+          { id: 'notices', label: '📢 공지 & 배너 작성' },
+          { id: 'reviews', label: '⭐ 수강 후기 모니터링' }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`text-xs sm:text-sm px-4 py-3 font-semibold transition-all border-b-2 cursor-pointer focus:outline-none whitespace-nowrap ${
+              activeTab === tab.id
+                ? 'border-[#C98C63] text-[#C98C63]'
+                : 'border-transparent text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab Panels content */}
+      <div className="min-h-[50vh]">
+        
+        {/* TAB 1: stats (종합 분석) */}
+        {activeTab === 'stats' && (
+          <div className="space-y-8">
+            {/* KPI cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              
+              <div className="p-6 bg-white dark:bg-[#27221E] border border-[#F6EFE7] dark:border-[#3D3530] rounded-2xl flex items-center justify-between">
+                <div className="space-y-1">
+                  <span className="text-[10px] text-gray-400 font-bold block">공방 총 매출액</span>
+                  <span className="text-2xl font-bold font-serif text-[#A26745] dark:text-[#D7A17E]">
+                    {stats.totalSales.toLocaleString()}원
+                  </span>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-amber-500/10 text-[#C98C63] flex items-center justify-center font-bold">
+                  ₩
+                </div>
+              </div>
+
+              <div className="p-6 bg-white dark:bg-[#27221E] border border-[#F6EFE7] dark:border-[#3D3530] rounded-2xl flex items-center justify-between">
+                <div className="space-y-1">
+                  <span className="text-[10px] text-gray-400 font-bold block">누적 체험 예약건수</span>
+                  <span className="text-2xl font-bold font-serif text-[#2E2A27] dark:text-[#F3EFEA]">
+                    {stats.totalBookingsCount}건
+                  </span>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center">
+                  <Calendar className="w-5 h-5" />
+                </div>
+              </div>
+
+              <div className="p-6 bg-white dark:bg-[#27221E] border border-[#F6EFE7] dark:border-[#3D3530] rounded-2xl flex items-center justify-between">
+                <div className="space-y-1">
+                  <span className="text-[10px] text-gray-400 font-bold block">출석 검증 완료</span>
+                  <span className="text-2xl font-bold font-serif text-emerald-500">
+                    {stats.attendedCount}건
+                  </span>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                  <Check className="w-5 h-5" />
+                </div>
+              </div>
+
+              <div className="p-6 bg-white dark:bg-[#27221E] border border-[#F6EFE7] dark:border-[#3D3530] rounded-2xl flex items-center justify-between">
+                <div className="space-y-1">
+                  <span className="text-[10px] text-gray-400 font-bold block">활성 예약수 (검토/승인)</span>
+                  <span className="text-2xl font-bold font-serif text-[#C98C63]">
+                    {stats.activeCount}건
+                  </span>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-amber-500/10 text-[#C98C63] flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5" />
+                </div>
+              </div>
+
+            </div>
+
+            {/* Popular classes Chart widget */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              
+              <div className="lg:col-span-2 bg-white dark:bg-[#27221E] border border-[#F6EFE7] dark:border-[#3D3530] p-6 rounded-2xl space-y-6">
+                <h3 className="font-serif font-bold text-base text-[#2E2A27] dark:text-[#F3EFEA]">
+                  🏆 체험 클래스 별 누적 인기 점유도 (예약수 기준)
+                </h3>
+
+                {stats.popularClassesSorted.length === 0 ? (
+                  <p className="text-xs text-gray-400 italic py-10 text-center">예약 통계 정보가 축적되지 않았습니다.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {stats.popularClassesSorted.map((item, idx) => {
+                      const maxCount = Math.max(...stats.popularClassesSorted.map(c => c.count));
+                      const percentWidth = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
+                      return (
+                        <div key={idx} className="space-y-1.5 text-xs">
+                          <div className="flex justify-between font-semibold">
+                            <span>{item.name}</span>
+                            <span className="text-[#C98C63]">{item.count}건 예약</span>
+                          </div>
+                          <div className="h-3 bg-gray-50 dark:bg-zinc-800 rounded-full overflow-hidden">
+                            <div 
+                              className="bg-gradient-to-r from-[#C98C63] to-[#A26745] h-full rounded-full"
+                              style={{ width: `${percentWidth}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Notice panel summary */}
+              <div className="bg-white dark:bg-[#27221E] border border-[#F6EFE7] dark:border-[#3D3530] p-6 rounded-2xl space-y-4">
+                <h3 className="font-serif font-bold text-base text-[#2E2A27] dark:text-[#F3EFEA]">
+                  📢 점장님 긴급 조치 가이드
+                </h3>
+                <div className="text-xs text-gray-500 space-y-3 leading-relaxed">
+                  <p>
+                    • <b>신규 예약 승인:</b> 수강생이 실시간 예약을 하면 <span className="text-[#C98C63] font-bold">수강 예약 관리</span> 탭에서 입금을 확인한 후 승인 처리를 하십시오.
+                  </p>
+                  <p>
+                    • <b>출석 및 체크인:</b> QR 입장권을 소지한 회원이 도착하면 "체험 완료" 상태로 조치하여 적립 포인트를 안전히 최종 정산시켜주세요.
+                  </p>
+                  <p>
+                    • <b>신규 클래스 출시:</b> 시즌 특강 및 재료 단가 변동이 있는 경우 수공예 체험 상품 탭에서 CRUD 기능을 즉각 조치하십시오.
+                  </p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: classes (클래스 관리) */}
+        {activeTab === 'classes' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center flex-wrap gap-4">
+              <h3 className="font-serif font-bold text-base text-[#2E2A27]">공방 운영 클래스 목록 ({classes.length}종)</h3>
+              <button
+                onClick={() => { setEditingClass(null); setPriceAndMetaDefaults(); setClassFormOpen(true); }}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#C98C63] text-white text-xs font-bold rounded-full cursor-pointer focus:outline-none"
+              >
+                <Plus className="w-3.5 h-3.5" /> 신규 클래스 개설 출시
+              </button>
+            </div>
+
+            {/* Class Form dialog */}
+            {classFormOpen && (
+              <form onSubmit={handleClassSubmit} className="bg-white dark:bg-[#2E2A27] border border-[#C98C63]/40 p-6 rounded-2xl space-y-4 shadow-sm max-w-2xl">
+                <h4 className="font-serif font-bold text-sm text-[#C98C63]">
+                  {editingClass ? '🎨 클래스 세부 내역 변경' : '🎨 신규 런칭 클래스 명세 작성'}
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div className="space-y-1">
+                    <label className="font-bold text-gray-400">클래스 이름</label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="예시: 감성 자수 파우치 메이킹" 
+                      value={className}
+                      onChange={(e) => setClassName(e.target.value)}
+                      className="w-full p-2 border rounded-lg bg-[#FFFDF9] dark:bg-[#1F1B18]"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-gray-400">수강 요금 (원)</label>
+                    <input 
+                      type="number" 
+                      required
+                      value={classPrice}
+                      onChange={(e) => setClassPrice(Number(e.target.value))}
+                      className="w-full p-2 border rounded-lg bg-[#FFFDF9] dark:bg-[#1F1B18]"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-gray-400">체험 난이도</label>
+                    <select
+                      value={classLevel}
+                      onChange={(e) => setClassLevel(e.target.value as any)}
+                      className="w-full p-2 border rounded-lg bg-[#FFFDF9] dark:bg-[#1F1B18]"
+                    >
+                      <option value="입문">입문</option>
+                      <option value="초급">초급</option>
+                      <option value="중급">중급</option>
+                      <option value="고급">고급</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-gray-400">최대 정원 (명)</label>
+                    <input 
+                      type="number" 
+                      value={classMaxPeople}
+                      onChange={(e) => setClassMaxPeople(Number(e.target.value))}
+                      className="w-full p-2 border rounded-lg bg-[#FFFDF9] dark:bg-[#1F1B18]"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1 text-xs">
+                  <label className="font-bold text-gray-400">클래스 상세 소개</label>
+                  <textarea 
+                    rows={3}
+                    placeholder="수강생들에게 보여줄 자세한 작품 가공과정과 공방 매력을 기입해주세요..."
+                    value={classDesc}
+                    onChange={(e) => setClassDesc(e.target.value)}
+                    className="w-full p-2 border rounded-lg bg-[#FFFDF9] dark:bg-[#1F1B18]"
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <button type="submit" className="px-5 py-2 rounded-full bg-[#C98C63] text-white text-xs font-bold cursor-pointer">
+                    {editingClass ? '변경사항 반영' : '상점 신규 출시하기'}
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => { setClassFormOpen(false); setEditingClass(null); }}
+                    className="px-5 py-2 rounded-full bg-gray-100 text-gray-600 text-xs font-bold cursor-pointer"
+                  >
+                    취소
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Classes Grid list */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {classes.map((c) => (
+                <div key={c.id} className="p-4 bg-white dark:bg-[#27221E] border border-[#F6EFE7] dark:border-[#3D3530] rounded-2xl flex items-center justify-between gap-4 text-xs">
+                  <div className="flex gap-3 items-center min-w-0">
+                    <img src={c.imageUrl} alt="" className="w-12 h-12 rounded-xl object-cover shrink-0" referrerPolicy="no-referrer" />
+                    <div className="min-w-0">
+                      <span className="text-[10px] text-[#C98C63] font-bold">{c.level} • {c.duration}</span>
+                      <h4 className="font-bold text-[#2E2A27] dark:text-[#F3EFEA] truncate">{c.name}</h4>
+                      <span className="font-semibold text-gray-500 block">{c.price.toLocaleString()}원</span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      onClick={() => handleEditClassClick(c)}
+                      className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-500 border border-gray-100 cursor-pointer"
+                      title="클래스 수정"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteClassClick(c.id)}
+                      className="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-500 border border-rose-100 cursor-pointer"
+                      title="클래스 삭제"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB 3: bookings (수강 예약 관리) */}
+        {activeTab === 'bookings' && (
+          <div className="space-y-4">
+            <h3 className="font-serif font-bold text-base text-[#2E2A27]">실시간 체험 예약 신청 장부 ({bookings.length}건)</h3>
+
+            {bookings.length === 0 ? (
+              <p className="text-xs text-gray-400 italic py-10 text-center">신청 들어온 예약 내역이 없습니다.</p>
+            ) : (
+              <div className="bg-white dark:bg-[#27221E] border border-[#F6EFE7] dark:border-[#3D3530] rounded-2xl overflow-hidden shadow-2xs divide-y divide-[#F6EFE7]">
+                {bookings.map((b) => (
+                  <div key={b.id} className="p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs">
+                    
+                    {/* User and class meta */}
+                    <div className="space-y-1.5 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
+                          b.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
+                          b.status === 'attended' ? 'bg-blue-100 text-blue-700' :
+                          b.status === 'cancelled' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {b.status}
+                        </span>
+                        <span className="text-[10px] text-gray-400 font-mono">예약번호: {b.id}</span>
+                      </div>
+
+                      <h4 className="font-bold text-sm text-[#2E2A27] dark:text-[#F3EFEA]">{b.className}</h4>
+                      
+                      <div className="flex flex-wrap items-center gap-3 text-gray-500">
+                        <span>회원: <b>{b.userName}</b> ({b.userEmail})</span>
+                        <span>•</span>
+                        <span>체험일시: <b>{b.date} / {b.time}</b></span>
+                        <span>•</span>
+                        <span>정원: <b>{b.headCount}명</b></span>
+                        <span>•</span>
+                        <span>결제액: <b>{b.totalPrice.toLocaleString()}원</b></span>
+                      </div>
+                    </div>
+
+                    {/* QR Attendance simulation and actions */}
+                    <div className="flex items-center gap-2 shrink-0 border-t md:border-t-0 pt-3 md:pt-0 border-gray-100 w-full md:w-auto">
+                      
+                      {b.status === 'pending' && (
+                        <button
+                          onClick={() => adminApproveBooking(b.id)}
+                          className="flex-1 md:flex-initial px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[11px] cursor-pointer"
+                        >
+                          예약 승인하기
+                        </button>
+                      )}
+
+                      {b.status === 'approved' && (
+                        <button
+                          onClick={() => adminAttendBooking(b.id)}
+                          className="flex-1 md:flex-initial px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-bold text-[11px] cursor-pointer"
+                        >
+                          출석 확인 (QR Check-In)
+                        </button>
+                      )}
+
+                      {b.status !== 'cancelled' && b.status !== 'attended' && (
+                        <button
+                          onClick={() => adminCancelBooking(b.id)}
+                          className="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-500 border border-rose-100 font-bold text-[11px] cursor-pointer"
+                        >
+                          거절/취소
+                        </button>
+                      )}
+
+                    </div>
+
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 4: notices (공지사항 작성) */}
+        {activeTab === 'notices' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            {/* Form Composer (2 Cols) */}
+            <div className="lg:col-span-2">
+              <form onSubmit={handleNoticeSubmit} className="bg-white dark:bg-[#27221E] border border-[#F6EFE7] dark:border-[#3D3530] p-6 rounded-2xl shadow-xs space-y-4">
+                <h3 className="font-serif font-bold text-base text-[#2E2A27] dark:text-[#F3EFEA] flex items-center gap-1.5">
+                  📝 공지사항 및 이벤트 보드 포스팅
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div className="space-y-1">
+                    <label className="font-bold text-gray-400">공지 분류 구분</label>
+                    <select
+                      value={noticeCategory}
+                      onChange={(e) => setNoticeCategory(e.target.value as any)}
+                      className="w-full p-2.5 border rounded-xl bg-gray-50 dark:bg-[#1F1B18]"
+                    >
+                      <option value="공지">📢 정기 공지 (Notice)</option>
+                      <option value="이벤트">🎁 스페셜 이벤트 (Event)</option>
+                      <option value="클래스">🎨 특강 교육 소식 (Class)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-gray-400">공지사항 헤드라인 제목</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="제목 입력..."
+                      value={noticeTitle}
+                      onChange={(e) => setNoticeTitle(e.target.value)}
+                      className="w-full p-2.5 border rounded-xl bg-gray-50 dark:bg-[#1F1B18]"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1 text-xs">
+                  <label className="font-bold text-gray-400">상세 게시글 작성</label>
+                  <textarea
+                    rows={8}
+                    required
+                    placeholder="게시물의 세부 본문을 친절하고 상세하게 기록해주세요..."
+                    value={noticeContent}
+                    onChange={(e) => setNoticeContent(e.target.value)}
+                    className="w-full p-3 border rounded-xl bg-gray-50 dark:bg-[#1F1B18] resize-none"
+                  />
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 rounded-full bg-[#C98C63] hover:bg-[#A26745] text-white text-xs font-bold cursor-pointer"
+                  >
+                    공지사항 보드에 게재하기
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* List of active notices to delete (1 Col) */}
+            <div className="space-y-4">
+              <h3 className="font-serif font-bold text-sm text-[#C98C63] uppercase tracking-wider">등록된 게시물 관리</h3>
+              <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
+                {notices.map(n => (
+                  <div key={n.id} className="p-4 bg-white dark:bg-[#27221E] border border-[#F6EFE7] dark:border-[#3D3530] rounded-2xl flex justify-between items-center text-xs">
+                    <div className="min-w-0 pr-2">
+                      <span className="text-[9px] text-[#C98C63] font-bold">{n.category}</span>
+                      <h4 className="font-bold text-gray-700 dark:text-gray-300 truncate">{n.title}</h4>
+                      <span className="text-[9px] text-gray-400 block">{n.createdAt.split('T')[0]}</span>
+                    </div>
+                    <button
+                      onClick={() => adminDeleteNotice(n.id)}
+                      className="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-500 border border-rose-100 shrink-0 cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB 5: reviews (수강후기 모니터링) */}
+        {activeTab === 'reviews' && (
+          <div className="space-y-4">
+            <h3 className="font-serif font-bold text-base text-[#2E2A27]">스팸/부적절 리뷰 검토 모니터링 ({reviews.length}건)</h3>
+
+            {reviews.length === 0 ? (
+              <p className="text-xs text-gray-400 italic py-10 text-center">등록된 수강평 후기가 존재하지 않습니다.</p>
+            ) : (
+              <div className="space-y-3">
+                {reviews.map(r => (
+                  <div key={r.id} className="p-4 bg-white dark:bg-[#27221E] border border-[#F6EFE7] dark:border-[#3D3530] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
+                    
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-[#A26745]">{r.userName} 수강생</span>
+                        <span className="text-gray-400 font-mono">{r.createdAt.split('T')[0]}</span>
+                        <span className="text-amber-400 font-bold">★ {r.rating}점</span>
+                      </div>
+                      <h4 className="font-bold text-[#2E2A27] dark:text-[#F3EFEA]">{r.className}</h4>
+                      <p className="text-gray-500 dark:text-gray-400 leading-relaxed font-light">{r.content}</p>
+                    </div>
+
+                    <button
+                      onClick={() => adminDeleteReview(r.id)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-100 font-semibold text-[10px] rounded-lg shrink-0 cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> 후기 영구삭제
+                    </button>
+
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+      </div>
+
+    </div>
+  );
+}

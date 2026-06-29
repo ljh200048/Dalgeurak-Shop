@@ -1,0 +1,6 @@
+{
+  "name": "달그락 상점",
+  "description": "손으로 만드는 작은 행복, 감성 공방 예약 플랫폼 및 에디션 편집숍",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
