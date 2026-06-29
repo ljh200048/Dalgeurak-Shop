@@ -219,7 +219,8 @@ export const INITIAL_CLASSES: WorkshopClass[] = [
     completedItem: '오프닝 미니 디퓨저 1구 (50ml)',
     precautions: ['해당 클래는 100% 무료 이벤트로 진행되므로, 계정당 1회만 예약 가능합니다.'],
     refundPolicy: '무료 이벤트로 환불금은 발생하지 않으나, 불참 시 다른 수강생을 위해 꼭 사전 취소 부탁드립니다.',
-    isFeatured: true
+    isFeatured: true,
+    isFreeTrial: true
   },
   {
     id: 'class-free-kit',
@@ -239,7 +240,8 @@ export const INITIAL_CLASSES: WorkshopClass[] = [
     completedItem: '달그락 시그니처 DIY 소품 키트 완제품 1개',
     precautions: ['해당 체험은 1인당 일평생 1회에 한하여 무료 예약 및 수강이 지원됩니다.'],
     refundPolicy: '무료 체험이므로 취소 시 위약금 및 공제 금액은 전혀 없으나, 노쇼 예방과 원활한 진행을 위해 불참 시 최소 1일 전 취소 부탁드립니다.',
-    isFeatured: true
+    isFeatured: true,
+    isFreeTrial: true
   },
   {
     id: 'class-free-shop-event',
@@ -259,7 +261,8 @@ export const INITIAL_CLASSES: WorkshopClass[] = [
     completedItem: '달그락 커스텀 감성 오너먼트 1개 + 수제 엽서 세트',
     precautions: ['보다 쾌적한 체험 환경 유지를 위해 동시 참여 인원이 제한되므로, 예약 정시 10분 전까지 반드시 입실을 완료해 주시기 바랍니다.', '본 세션은 신규 고객들을 위한 무상 제공 세션이므로 중복 수강은 정중히 사양합니다.'],
     refundPolicy: '100% 무료 체험 프로그램으로 수강 취소 위약금은 없습니다. 단, 한정 인원 예약제로 진행되어 부득이한 불참 시 최소 1일 전까지 마이페이지에서 예약 취소 부탁드립니다.',
-    isFeatured: true
+    isFeatured: true,
+    isFreeTrial: true
   },
   {
     id: 'class-workshop-signature',
@@ -279,7 +282,8 @@ export const INITIAL_CLASSES: WorkshopClass[] = [
     completedItem: '각인 가죽 키링 1개 + 아로마 플라워 왁스 타블렛 1개 + 레트로 커스텀 컵받침 1개',
     precautions: ['일부 고온 도구(불박 각인기 등) 사용 시 안전을 위해 반드시 작가의 안내에 따라 조작해주셔야 합니다.', '개인 각인에 새길 문구(영문 대문자, 숫자, 이니셜)를 미리 구상해오시면 클래스가 더욱 매끄럽게 진행됩니다.'],
     refundPolicy: '체험일 3일 전 100% 환불, 2일 전 50% 환불, 1일 전 및 당일 취소는 원활한 클래스 운영 및 사전 재료 소분 준비를 위해 환불 및 양도가 불가합니다.',
-    isFeatured: true
+    isFeatured: true,
+    isFreeTrial: false
   }
 ];
 

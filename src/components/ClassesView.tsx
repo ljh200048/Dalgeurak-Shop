@@ -324,6 +324,7 @@ export default function ClassesView({ setView, setSelectedClassId, initialFilter
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
           >
             {filteredClasses.map((item) => {
+              const isFreeTrial = !!item.isFreeTrial;
               const isFreeKit = item.id === 'class-free-kit';
               return (
                 <motion.div
@@ -337,7 +338,7 @@ export default function ClassesView({ setView, setSelectedClassId, initialFilter
                     handleClassClick(item.id);
                   }}
                   className={`group rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all cursor-pointer flex flex-col h-full justify-between relative ${
-                    isFreeKit
+                    isFreeTrial
                       ? 'border-2 border-dashed border-[#C98C63] bg-[#FFFDF9] dark:bg-[#2A2420] ring-4 ring-[#C98C63]/10'
                       : 'bg-white dark:bg-[#27221E] border border-[#F6EFE7] dark:border-[#3D3530]'
                   }`}
@@ -355,11 +356,11 @@ export default function ClassesView({ setView, setSelectedClassId, initialFilter
                       
                       {/* Level Tag / Free trial indicator */}
                       <span className={`absolute top-4 left-4 px-2.5 py-1 rounded-md text-[10px] font-bold shadow-sm ${
-                        isFreeKit 
+                        isFreeTrial 
                           ? 'bg-[#C98C63] text-white animate-pulse'
                           : 'bg-[#FFFDF9] dark:bg-[#1F1B18] text-[#C98C63] dark:text-[#D7A17E]'
                       }`}>
-                        {isFreeKit ? '★ 무료 체험' : `${item.level} 난이도`}
+                        {isFreeTrial ? '★ 무료 체험' : `${item.level} 난이도`}
                       </span>
 
                       {/* Time limit badge */}
@@ -368,9 +369,9 @@ export default function ClassesView({ setView, setSelectedClassId, initialFilter
                       </span>
 
                       {/* Sparkles / Gift overlay on free kit hover */}
-                      {isFreeKit && (
+                      {isFreeTrial && (
                         <div className="absolute top-4 right-4 z-10 px-2 py-1 rounded-full bg-[#A26745] text-white text-[9px] font-bold tracking-wider uppercase flex items-center gap-1">
-                          <Gift className="w-3 h-3" /> BEST
+                          <Gift className="w-3 h-3" /> {isFreeKit ? 'BEST' : 'FREE'}
                         </div>
                       )}
                     </div>
@@ -381,7 +382,7 @@ export default function ClassesView({ setView, setSelectedClassId, initialFilter
                       <div className="flex flex-wrap gap-1.5">
                         {item.categories.map(cat => (
                           <span key={cat} className={`text-[10px] px-2 py-0.5 rounded-md font-semibold ${
-                            isFreeKit
+                            isFreeTrial
                               ? 'bg-[#C98C63]/10 text-[#C98C63] dark:text-[#E8AF8A]'
                               : 'bg-[#F6EFE7] dark:bg-[#322B27] text-[#C98C63] dark:text-[#D7A17E]'
                           }`}>
@@ -402,15 +403,17 @@ export default function ClassesView({ setView, setSelectedClassId, initialFilter
 
                   {/* Footer specs */}
                   <div className="p-6 pt-0">
-                    {isFreeKit ? (
+                    {isFreeTrial ? (
                       <div className="pt-4 border-t border-[#C98C63]/30 flex flex-col gap-2">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5">
                             <span className="text-[10px] text-gray-500 dark:text-gray-400">혜택</span>
-                            <span className="text-[10px] text-[#C98C63] font-bold bg-[#C98C63]/10 px-1.5 py-0.5 rounded-sm">패키지 무상 증정</span>
+                            <span className="text-[10px] text-[#C98C63] font-bold bg-[#C98C63]/10 px-1.5 py-0.5 rounded-sm">
+                              {isFreeKit ? '패키지 무상 증정' : '웰컴 체험 무료'}
+                            </span>
                           </div>
                           <div className="text-right">
-                            <span className="text-sm font-extrabold text-[#C98C63] dark:text-[#E8AF8A]">무료 체험 이벤트</span>
+                            <span className="text-sm font-extrabold text-[#C98C63] dark:text-[#E8AF8A]">무료 체험 프로그램</span>
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-2 mt-1">
@@ -428,11 +431,15 @@ export default function ClassesView({ setView, setSelectedClassId, initialFilter
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setShowFreeKitModal(true);
+                              if (isFreeKit) {
+                                setShowFreeKitModal(true);
+                              } else {
+                                handleClassClick(item.id);
+                              }
                             }}
                             className="w-full bg-[#C98C63] hover:bg-[#A26745] text-white text-xs font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-1 transition-colors shadow-xs cursor-pointer focus:outline-none"
                           >
-                            <Gift className="w-3.5 h-3.5 animate-pulse" /> 간편 신청 🎁
+                            <Gift className="w-3.5 h-3.5 animate-pulse" /> {isFreeKit ? '간편 신청 🎁' : '체험 예약 🎁'}
                           </button>
                         </div>
                       </div>

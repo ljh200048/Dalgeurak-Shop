@@ -17,6 +17,7 @@ export interface WorkshopClass {
   precautions: string[];
   refundPolicy: string;
   isFeatured?: boolean;
+  isFreeTrial?: boolean;
 }
 
 export interface ProductItem {

@@ -268,7 +268,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           }
 
           // Bookings
-          const bookingsCol = collection(db, 'bookings');
+          const bookingsCol = collection(db, 'reservations');
           const bookingsSnapshot = await getDocs(bookingsCol);
           loadedBookings = bookingsSnapshot.docs.map(doc => doc.data() as Booking);
 
@@ -328,7 +328,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           loadedNotices = getStorage<Notice[]>('notices', INITIAL_NOTICES);
           loadedGallery = getStorage<GalleryItem[]>('gallery', INITIAL_GALLERY);
           loadedReviews = getStorage<Review[]>('reviews', INITIAL_REVIEWS);
-          loadedBookings = getStorage<Booking[]>('bookings', []);
+          loadedBookings = getStorage<Booking[]>('reservations', []);
           loadedCoupons = getStorage<Coupon[]>('coupons', [
             { id: 'coupon-welcome', code: 'WELCOME10', name: '가입 환영 10% 쿠폰', discountType: 'percent', discountValue: 10, description: '전체 클래스 10% 예약 할인', expiryDate: '2026-12-31', status: 'active' },
             { id: 'coupon-opening', code: 'DALGEURAK3000', name: '정식 오픈 3천원 할인권', discountType: 'amount', discountValue: 3000, description: '체험 예약 시 즉시 3,000원 할인', expiryDate: '2026-09-30', status: 'active' },
@@ -448,7 +448,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (products.length > 0) setStorage('products', products);
   }, [products]);
   useEffect(() => {
-    if (bookings.length > 0) setStorage('bookings', bookings);
+    if (bookings.length > 0) setStorage('reservations', bookings);
   }, [bookings]);
   useEffect(() => {
     if (reviews.length > 0) setStorage('reviews', reviews);
@@ -544,7 +544,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const selClass = classes.find(c => c.id === classId);
     if (!selClass) throw new Error("선택하신 클래스가 존재하지 않습니다.");
 
-    const basePrice = selClass.price * headCount;
+    // Check free trial limitation
+    if (selClass.isFreeTrial) {
+      const emailToCheck = currentUser?.email || guestEmail;
+      const phoneToCheck = guestPhone;
+
+      const hasExistingFreeTrialBooking = bookings.some(b => {
+        const bClass = classes.find(c => c.id === b.classId);
+        if (!bClass?.isFreeTrial || b.status === 'cancelled') return false;
+
+        if (currentUser && b.userId === currentUser.uid) return true;
+        if (emailToCheck && b.userEmail === emailToCheck) return true;
+        if (phoneToCheck && b.guestPhone === phoneToCheck) return true;
+
+        return false;
+      });
+
+      if (hasExistingFreeTrialBooking) {
+        throw new Error("무료 체험 클래스는 1인당 1회만 예약 가능합니다. 이미 신청 완료되었거나 예약 대기 중인 무료 체험 내역이 존재합니다.");
+      }
+    }
+
+    const basePrice = (selClass.isFreeTrial ? 0 : selClass.price) * headCount;
     let finalPrice = basePrice;
     
     // Process discount
@@ -584,7 +605,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     // Save to Firestore if connected
     try {
-      await setDoc(doc(db, 'bookings', bookingId), newBooking);
+      await setDoc(doc(db, 'reservations', bookingId), newBooking);
       
       // Update User profile (Points & Used coupon)
       if (currentUser) {
@@ -674,7 +695,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setBookings(updated);
 
     try {
-      await updateDoc(doc(db, 'bookings', bookingId), { status: 'cancelled' });
+      await updateDoc(doc(db, 'reservations', bookingId), { status: 'cancelled' });
     } catch (e) {
       console.warn("Firestore cancel failed, updated locally:", e);
     }
@@ -1059,7 +1080,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setBookings(updated);
 
     try {
-      await updateDoc(doc(db, 'bookings', bookingId), { status: 'approved' });
+      await updateDoc(doc(db, 'reservations', bookingId), { status: 'approved' });
     } catch (e) {
       console.warn("Admin approve failed:", e);
     }
@@ -1070,7 +1091,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setBookings(updated);
 
     try {
-      await updateDoc(doc(db, 'bookings', bookingId), { status: 'attended' });
+      await updateDoc(doc(db, 'reservations', bookingId), { status: 'attended' });
     } catch (e) {
       console.warn("Admin attend failed:", e);
     }
@@ -1081,7 +1102,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setBookings(updated);
 
     try {
-      await updateDoc(doc(db, 'bookings', bookingId), { status: 'cancelled' });
+      await updateDoc(doc(db, 'reservations', bookingId), { status: 'cancelled' });
     } catch (e) {
       console.warn("Admin cancel failed:", e);
     }

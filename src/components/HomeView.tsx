@@ -11,7 +11,8 @@ interface HomeViewProps {
 export default function HomeView({ setView, setSelectedClassId }: HomeViewProps) {
   const { classes, notices } = useApp();
 
-  const featuredClasses = classes.filter(c => c.isFeatured).slice(0, 4);
+  const freeTrialClasses = classes.filter(c => c.isFreeTrial);
+  const featuredClasses = classes.filter(c => !c.isFreeTrial && c.isFeatured).slice(0, 4);
 
   const handleClassClick = (id: string) => {
     setSelectedClassId(id);
@@ -90,6 +91,84 @@ export default function HomeView({ setView, setSelectedClassId }: HomeViewProps)
           달그락 상점은 누구나 수공예의 기쁨을 배우고 누릴 수 있도록 세심히 고안된 도구와 최고급 천연 재료, 친절한 1대1 코칭 서비스를 제공합니다. 비즈, 아로마 캔들, 플라워 디퓨저, 자수 에코백까지 나만의 다정한 감성을 달그락 조립해 보세요.
         </p>
       </section>
+
+      {/* 2.5. Free Trial Section */}
+      {freeTrialClasses.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          <div className="bg-[#FFFDF9] dark:bg-[#2A2420] border-2 border-dashed border-[#C98C63]/60 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xs relative overflow-hidden">
+            <div className="absolute right-[-5%] top-[-5%] w-60 h-60 bg-[#C98C63]/10 rounded-full blur-3xl pointer-events-none" />
+            
+            <div className="text-center space-y-2 max-w-xl mx-auto relative z-10">
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#C98C63] text-white text-[10px] font-bold tracking-widest uppercase animate-pulse">
+                ★ 100% 무료 체험 특별 프로그램
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[#2E2A27] dark:text-[#F3EFEA] tracking-tight">
+                달그락 웰컴 무료 체험 클래스
+              </h2>
+              <p className="text-xs sm:text-sm text-[#2E2A27]/70 dark:text-[#F3EFEA]/70 leading-relaxed">
+                달그락 상점의 따뜻한 감성을 부담 없이 맛보실 수 있도록 제공되는 무료 이벤트 세션입니다. <br className="hidden sm:inline" />
+                <b>회원 로그인 시 계정당 일평생 단 1회</b>만 무료 예약 혜택을 제공받으실 수 있습니다.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
+              {freeTrialClasses.map((item) => (
+                <motion.div
+                  key={item.id}
+                  whileHover={{ y: -6 }}
+                  transition={{ duration: 0.3 }}
+                  onClick={() => handleClassClick(item.id)}
+                  className="group cursor-pointer bg-white dark:bg-[#1F1B18] rounded-2xl overflow-hidden border border-[#C98C63]/30 hover:border-[#C98C63] shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="relative aspect-16/10 overflow-hidden bg-gray-100 dark:bg-zinc-800">
+                      <img 
+                        src={item.imageUrl} 
+                        alt={item.name} 
+                        className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
+                        referrerPolicy="no-referrer"
+                      />
+                      <span className="absolute top-3 left-3 px-2 py-0.5 rounded-md bg-[#C98C63] text-white text-[10px] font-bold tracking-wide shadow-sm flex items-center gap-1 animate-pulse">
+                        ★ 무료 체험
+                      </span>
+                      <span className="absolute bottom-3 right-3 px-2 py-0.5 rounded-full bg-black/60 text-white text-[10px] font-medium tracking-wide">
+                        {item.duration} 소요
+                      </span>
+                    </div>
+
+                    <div className="p-5 space-y-2">
+                      <div className="flex flex-wrap gap-1">
+                        {item.categories.slice(0, 3).map(cat => (
+                          <span key={cat} className="text-[9px] px-1.5 py-0.5 rounded bg-[#C98C63]/10 text-[#C98C63] font-bold">
+                            #{cat}
+                          </span>
+                        ))}
+                      </div>
+                      <h3 className="font-serif font-bold text-[#2E2A27] dark:text-[#F3EFEA] text-base group-hover:text-[#C98C63] transition-colors line-clamp-1">
+                        {item.name}
+                      </h3>
+                      <p className="text-xs text-[#2E2A27]/60 dark:text-[#F3EFEA]/60 line-clamp-2 leading-relaxed">
+                        {item.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-5 pt-0">
+                    <div className="pt-3 border-t border-[#F6EFE7]/60 dark:border-[#3D3530]/40 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-1">
+                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                        <span className="font-bold text-[#2E2A27] dark:text-[#F3EFEA]">{item.rating}</span>
+                        <span className="text-gray-400">({item.reviewCount})</span>
+                      </div>
+                      <span className="font-extrabold text-[#C98C63] dark:text-[#E8AF8A]">0원 (무료 수강)</span>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 4. Event / Announcement Banner */}
       {promoBanner && (

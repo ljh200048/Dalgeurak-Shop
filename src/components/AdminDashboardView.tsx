@@ -68,6 +68,7 @@ export default function AdminDashboardView() {
   const [classDuration, setClassDuration] = useState('1시간 30분');
   const [classMaxPeople, setClassMaxPeople] = useState(6);
   const [classImageUrl, setClassImageUrl] = useState('https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&q=80&w=600');
+  const [classIsFreeTrial, setClassIsFreeTrial] = useState(false);
 
   // New Notice state
   const [noticeTitle, setNoticeTitle] = useState('');
@@ -115,18 +116,19 @@ export default function AdminDashboardView() {
     const classPayload = {
       name: className,
       description: classDesc,
-      categories: ['커스텀', '아트'],
+      categories: classIsFreeTrial ? ['커스텀', '무료', '체험'] : ['커스텀', '아트'],
       level: classLevel,
       duration: classDuration,
       maxPeople: classMaxPeople,
-      price: classPrice,
+      price: classIsFreeTrial ? 0 : classPrice,
+      isFreeTrial: classIsFreeTrial,
       imageUrl: classImageUrl,
       intro: classDesc,
       materials: ['기본 공방 자재 세트'],
       provided: ['음료 서비스'],
       completedItem: '나만의 오리지널 완성작 1종',
       precautions: ['공구 오사용에 의한 상해에 주의하세요.'],
-      refundPolicy: '체험 3일 전 100% 환불'
+      refundPolicy: classIsFreeTrial ? '무료 체험 프로그램으로 취소 위약금이 없습니다.' : '체험 3일 전 100% 환불'
     };
 
     try {
@@ -153,6 +155,7 @@ export default function AdminDashboardView() {
     setClassPrice(20000);
     setClassDuration('1시간 30분');
     setClassMaxPeople(6);
+    setClassIsFreeTrial(false);
   };
 
   const handleEditClassClick = (cls: WorkshopClass) => {
@@ -164,6 +167,7 @@ export default function AdminDashboardView() {
     setClassDuration(cls.duration);
     setClassMaxPeople(cls.maxPeople);
     setClassImageUrl(cls.imageUrl);
+    setClassIsFreeTrial(cls.isFreeTrial || false);
     setClassFormOpen(true);
   };
 
@@ -407,13 +411,34 @@ export default function AdminDashboardView() {
                     />
                   </div>
                   <div className="space-y-1">
+                    <label className="font-bold text-gray-400">구분 (무료/유료)</label>
+                    <select
+                      value={classIsFreeTrial ? 'free' : 'paid'}
+                      onChange={(e) => {
+                        const isFree = e.target.value === 'free';
+                        setClassIsFreeTrial(isFree);
+                        if (isFree) {
+                          setClassPrice(0);
+                        } else if (classPrice === 0) {
+                          setClassPrice(20000);
+                        }
+                      }}
+                      className="w-full p-2 border rounded-lg bg-[#FFFDF9] dark:bg-[#1F1B18] font-bold text-[#C98C63]"
+                    >
+                      <option value="paid">유료 원데이 클래스</option>
+                      <option value="free">★ 무료 체험 클래스</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
                     <label className="font-bold text-gray-400">수강 요금 (원)</label>
                     <input 
                       type="number" 
                       required
-                      value={classPrice}
+                      disabled={classIsFreeTrial}
+                      placeholder="수강 금액을 입력해주세요"
+                      value={classIsFreeTrial ? 0 : classPrice}
                       onChange={(e) => setClassPrice(Number(e.target.value))}
-                      className="w-full p-2 border rounded-lg bg-[#FFFDF9] dark:bg-[#1F1B18]"
+                      className="w-full p-2 border rounded-lg bg-[#FFFDF9] dark:bg-[#1F1B18] disabled:opacity-60 disabled:bg-gray-100 dark:disabled:bg-zinc-800"
                     />
                   </div>
                   <div className="space-y-1">
@@ -473,9 +498,13 @@ export default function AdminDashboardView() {
                   <div className="flex gap-3 items-center min-w-0">
                     <img src={c.imageUrl} alt="" className="w-12 h-12 rounded-xl object-cover shrink-0" referrerPolicy="no-referrer" />
                     <div className="min-w-0">
-                      <span className="text-[10px] text-[#C98C63] font-bold">{c.level} • {c.duration}</span>
+                      <span className="text-[10px] text-[#C98C63] font-bold">
+                        {c.level} • {c.duration} {c.isFreeTrial && <span className="ml-1.5 px-1.5 py-0.5 rounded bg-[#C98C63]/15 text-[#C98C63] text-[9px] font-extrabold animate-pulse">★ 무료 체험</span>}
+                      </span>
                       <h4 className="font-bold text-[#2E2A27] dark:text-[#F3EFEA] truncate">{c.name}</h4>
-                      <span className="font-semibold text-gray-500 block">{c.price.toLocaleString()}원</span>
+                      <span className="font-semibold text-gray-500 block">
+                        {c.isFreeTrial ? '0원 (무료 체험)' : `${c.price.toLocaleString()}원`}
+                      </span>
                     </div>
                   </div>
 
