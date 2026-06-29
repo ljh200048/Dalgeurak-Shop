@@ -34,6 +34,11 @@ export default function LoginView({ setView, initialMode = 'login' }: LoginViewP
           setLoading(false);
           return;
         }
+        if (role === 'admin' && email !== 'admin@dalgeurak.com' && email !== 'lch200048@gmail.com') {
+          alert('공방 점장(관리자) 회원가입은 지정된 관리자 이메일(admin@dalgeurak.com 또는 lch200048@gmail.com)로만 가능합니다.');
+          setLoading(false);
+          return;
+        }
         await signupWithEmail(email, password, name, role);
         alert('회원가입이 완료되었습니다! 웰컴 2,000 포인트가 적립되었습니다.');
       }

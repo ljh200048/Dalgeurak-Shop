@@ -366,7 +366,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             uid: firebaseUser.uid,
             email: firebaseUser.email || '',
             displayName: firebaseUser.displayName || '수강생',
-            role: firebaseUser.email === 'admin@dalgeurak.com' ? 'admin' : 'user',
+            role: firebaseUser.email === 'admin@dalgeurak.com' || firebaseUser.email === 'lch200048@gmail.com' ? 'admin' : 'user',
             points: 2000,
             coupons: ['coupon-welcome', 'coupon-opening', 'coupon-free-event'],
             favoriteClasses: [],
@@ -452,7 +452,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       uid: firebaseUser.uid,
       email: firebaseUser.email || '',
       displayName: name,
-      role: email === 'admin@dalgeurak.com' || email === 'lch200048@gmail.com' ? 'admin' : role,
+      role: email === 'admin@dalgeurak.com' || email === 'lch200048@gmail.com' ? 'admin' : 'user',
       points: 2000, // 2000 pts welcome
       coupons: ['coupon-welcome', 'coupon-opening', 'coupon-free-event'],
       favoriteClasses: [],
