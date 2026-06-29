@@ -100,6 +100,7 @@ interface AppContextType {
   adminAddNotice: (notice: Omit<Notice, 'id' | 'createdAt' | 'views'>) => Promise<void>;
   adminDeleteNotice: (noticeId: string) => Promise<void>;
   adminDeleteReview: (reviewId: string) => Promise<void>;
+  recreateAllClasses: () => Promise<void>;
   telegramConfig: { botToken: string; chatId: string; isEnabled: boolean };
   updateTelegramConfig: (config: { botToken: string; chatId: string; isEnabled: boolean }) => Promise<void>;
 }
@@ -172,26 +173,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const classesCol = collection(db, 'classes');
           const classesSnapshot = await getDocs(classesCol);
           if (classesSnapshot.empty) {
-            // Seed classes
-            for (const c of INITIAL_CLASSES) {
-              await setDoc(doc(classesCol, c.id), c);
+            loadedClasses = [...INITIAL_CLASSES];
+            // Seed classes (silent try-catch to allow guest read access if write fails)
+            try {
+              for (const c of INITIAL_CLASSES) {
+                await setDoc(doc(classesCol, c.id), c);
+              }
+            } catch (e) {
+              console.warn("Guest user lacks Firestore write permission to seed classes. Using local fallback.");
             }
-            loadedClasses = INITIAL_CLASSES;
           } else {
             loadedClasses = classesSnapshot.docs.map(doc => doc.data() as WorkshopClass);
-            
-            // Sync all INITIAL_CLASSES to Firestore
+            // Merge INITIAL_CLASSES locally to guarantee latest classes are always available
             for (const initialClass of INITIAL_CLASSES) {
               const existingIdx = loadedClasses.findIndex(c => c.id === initialClass.id);
               if (existingIdx === -1) {
-                await setDoc(doc(classesCol, initialClass.id), initialClass);
                 loadedClasses.push(initialClass);
               } else {
-                const existing = loadedClasses[existingIdx];
-                if (existing.imageUrl.includes('photo-1513519245088') || existing.imageUrl !== initialClass.imageUrl) {
-                  await setDoc(doc(classesCol, initialClass.id), initialClass);
-                  loadedClasses[existingIdx] = initialClass;
-                }
+                loadedClasses[existingIdx] = initialClass;
               }
             }
           }
@@ -200,25 +199,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const productsCol = collection(db, 'products');
           const productsSnapshot = await getDocs(productsCol);
           if (productsSnapshot.empty) {
-            for (const p of INITIAL_PRODUCTS) {
-              await setDoc(doc(productsCol, p.id), p);
+            loadedProducts = [...INITIAL_PRODUCTS];
+            try {
+              for (const p of INITIAL_PRODUCTS) {
+                await setDoc(doc(productsCol, p.id), p);
+              }
+            } catch (e) {
+              console.warn("Guest lacks write permissions to seed products.");
             }
-            loadedProducts = INITIAL_PRODUCTS;
           } else {
             loadedProducts = productsSnapshot.docs.map(doc => doc.data() as ProductItem);
-            
-            // Sync all INITIAL_PRODUCTS to Firestore
             for (const initialProduct of INITIAL_PRODUCTS) {
               const existingIdx = loadedProducts.findIndex(p => p.id === initialProduct.id);
               if (existingIdx === -1) {
-                await setDoc(doc(productsCol, initialProduct.id), initialProduct);
                 loadedProducts.push(initialProduct);
               } else {
-                const existing = loadedProducts[existingIdx];
-                if (existing.imageUrl.includes('photo-1513519245088') || existing.imageUrl !== initialProduct.imageUrl) {
-                  await setDoc(doc(productsCol, initialProduct.id), initialProduct);
-                  loadedProducts[existingIdx] = initialProduct;
-                }
+                loadedProducts[existingIdx] = initialProduct;
               }
             }
           }
@@ -227,10 +223,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const noticesCol = collection(db, 'notices');
           const noticesSnapshot = await getDocs(noticesCol);
           if (noticesSnapshot.empty) {
-            for (const n of INITIAL_NOTICES) {
-              await setDoc(doc(noticesCol, n.id), n);
+            loadedNotices = [...INITIAL_NOTICES];
+            try {
+              for (const n of INITIAL_NOTICES) {
+                await setDoc(doc(noticesCol, n.id), n);
+              }
+            } catch (e) {
+              console.warn("Guest lacks write permissions to seed notices.");
             }
-            loadedNotices = INITIAL_NOTICES;
           } else {
             loadedNotices = noticesSnapshot.docs.map(doc => doc.data() as Notice);
           }
@@ -239,10 +239,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const galleryCol = collection(db, 'gallery');
           const gallerySnapshot = await getDocs(galleryCol);
           if (gallerySnapshot.empty) {
-            for (const g of INITIAL_GALLERY) {
-              await setDoc(doc(galleryCol, g.id), g);
+            loadedGallery = [...INITIAL_GALLERY];
+            try {
+              for (const g of INITIAL_GALLERY) {
+                await setDoc(doc(galleryCol, g.id), g);
+              }
+            } catch (e) {
+              console.warn("Guest lacks write permissions to seed gallery.");
             }
-            loadedGallery = INITIAL_GALLERY;
           } else {
             loadedGallery = gallerySnapshot.docs.map(doc => doc.data() as GalleryItem);
           }
@@ -251,10 +255,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const reviewsCol = collection(db, 'reviews');
           const reviewsSnapshot = await getDocs(reviewsCol);
           if (reviewsSnapshot.empty) {
-            for (const r of INITIAL_REVIEWS) {
-              await setDoc(doc(reviewsCol, r.id), r);
+            loadedReviews = [...INITIAL_REVIEWS];
+            try {
+              for (const r of INITIAL_REVIEWS) {
+                await setDoc(doc(reviewsCol, r.id), r);
+              }
+            } catch (e) {
+              console.warn("Guest lacks write permissions to seed reviews.");
             }
-            loadedReviews = INITIAL_REVIEWS;
           } else {
             loadedReviews = reviewsSnapshot.docs.map(doc => doc.data() as Review);
           }
@@ -267,25 +275,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           // Coupons
           const couponsCol = collection(db, 'coupons');
           const couponsSnapshot = await getDocs(couponsCol);
+          const initialCoupons: Coupon[] = [
+            { id: 'coupon-welcome', code: 'WELCOME10', name: '가입 환영 10% 쿠폰', discountType: 'percent', discountValue: 10, description: '전체 클래스 10% 예약 할인', expiryDate: '2026-12-31', status: 'active' },
+            { id: 'coupon-opening', code: 'DALGEURAK3000', name: '정식 오픈 3천원 할인권', discountType: 'amount', discountValue: 3000, description: '체험 예약 시 즉시 3,000원 할인', expiryDate: '2026-09-30', status: 'active' },
+            { id: 'coupon-free-event', code: 'FREE100', name: '오픈 기념 100% 무료 체험 쿠폰', discountType: 'percent', discountValue: 100, description: '원하는 클래스 100% 무료 예약 가능!', expiryDate: '2026-12-31', status: 'active' }
+          ];
           if (couponsSnapshot.empty) {
-            const initialCoupons: Coupon[] = [
-              { id: 'coupon-welcome', code: 'WELCOME10', name: '가입 환영 10% 쿠폰', discountType: 'percent', discountValue: 10, description: '전체 클래스 10% 예약 할인', expiryDate: '2026-12-31', status: 'active' },
-              { id: 'coupon-opening', code: 'DALGEURAK3000', name: '정식 오픈 3천원 할인권', discountType: 'amount', discountValue: 3000, description: '체험 예약 시 즉시 3,000원 할인', expiryDate: '2026-09-30', status: 'active' },
-              { id: 'coupon-free-event', code: 'FREE100', name: '오픈 기념 100% 무료 체험 쿠폰', discountType: 'percent', discountValue: 100, description: '원하는 클래스 100% 무료 예약 가능!', expiryDate: '2026-12-31', status: 'active' }
-            ];
-            for (const cp of initialCoupons) {
-              await setDoc(doc(couponsCol, cp.id), cp);
-            }
             loadedCoupons = initialCoupons;
+            try {
+              for (const cp of initialCoupons) {
+                await setDoc(doc(couponsCol, cp.id), cp);
+              }
+            } catch (e) {
+              console.warn("Guest lacks write permissions to seed coupons.");
+            }
           } else {
-            // Check if coupon-free-event exists, if not add it
-            const existing = couponsSnapshot.docs.map(doc => doc.data() as Coupon);
-            if (!existing.some(c => c.id === 'coupon-free-event')) {
-              const freeCoupon: Coupon = { id: 'coupon-free-event', code: 'FREE100', name: '오픈 기념 100% 무료 체험 쿠폰', discountType: 'percent', discountValue: 100, description: '원하는 클래스 100% 무료 예약 가능!', expiryDate: '2026-12-31', status: 'active' };
-              await setDoc(doc(couponsCol, freeCoupon.id), freeCoupon);
-              loadedCoupons = [...existing, freeCoupon];
-            } else {
-              loadedCoupons = existing;
+            loadedCoupons = couponsSnapshot.docs.map(doc => doc.data() as Coupon);
+            // Make sure FREE100 always exists locally
+            if (!loadedCoupons.some(c => c.id === 'coupon-free-event')) {
+              loadedCoupons.push(initialCoupons[2]);
             }
           }
 
@@ -1119,6 +1127,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const recreateAllClasses = async () => {
+    try {
+      const classesCol = collection(db, 'classes');
+      
+      // Delete extra classes that are not in INITIAL_CLASSES
+      const snapshot = await getDocs(classesCol);
+      const initialIds = INITIAL_CLASSES.map(c => c.id);
+      for (const d of snapshot.docs) {
+        if (!initialIds.includes(d.id)) {
+          await deleteDoc(doc(classesCol, d.id));
+        }
+      }
+
+      // Overwrite/Create all INITIAL_CLASSES
+      for (const initialClass of INITIAL_CLASSES) {
+        await setDoc(doc(classesCol, initialClass.id), initialClass);
+      }
+
+      // Force set local state to clean initial copy
+      setClasses([...INITIAL_CLASSES]);
+      setStorage<WorkshopClass[]>('classes', INITIAL_CLASSES);
+    } catch (err) {
+      console.error("Recreate classes failed:", err);
+      // Local fallback
+      setClasses([...INITIAL_CLASSES]);
+      setStorage<WorkshopClass[]>('classes', INITIAL_CLASSES);
+      throw err;
+    }
+  };
+
   return (
     <AppContext.Provider value={{
       currentUser,
@@ -1164,6 +1202,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       adminAddNotice,
       adminDeleteNotice,
       adminDeleteReview,
+      recreateAllClasses,
       telegramConfig,
       updateTelegramConfig
     }}>

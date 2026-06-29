@@ -15,7 +15,8 @@ import {
   Sparkles, 
   AlertCircle,
   Clock,
-  Send
+  Send,
+  RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -34,6 +35,7 @@ export default function AdminDashboardView() {
     adminAddNotice, 
     adminDeleteNotice, 
     adminDeleteReview,
+    recreateAllClasses,
     telegramConfig,
     updateTelegramConfig
   } = useApp();
@@ -56,6 +58,7 @@ export default function AdminDashboardView() {
   // Dialog / Edit states
   const [classFormOpen, setClassFormOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<WorkshopClass | null>(null);
+  const [isRecreating, setIsRecreating] = useState(false);
   
   // New Class state
   const [className, setClassName] = useState('');
@@ -167,6 +170,20 @@ export default function AdminDashboardView() {
   const handleDeleteClassClick = async (id: string) => {
     if (confirm('이 원데이 클래스를 상점에서 전면 영구 삭제하시겠습니까?')) {
       await adminDeleteClass(id);
+    }
+  };
+
+  const handleRecreateAll = async () => {
+    if (confirm('모든 클래스를 공방 초기 상태 데이터(10종 및 무료체험 3종)로 완전히 복원하고, 다른 커스텀 등록 클래스는 삭제하시겠습니까?')) {
+      setIsRecreating(true);
+      try {
+        await recreateAllClasses();
+        alert('모든 클래스가 성공적으로 공방 기본 원데이 클래스로 복원 완료되었습니다!');
+      } catch (e) {
+        alert('복원 처리 중 오류가 발생했습니다.');
+      } finally {
+        setIsRecreating(false);
+      }
     }
   };
 
@@ -351,12 +368,23 @@ export default function AdminDashboardView() {
           <div className="space-y-6">
             <div className="flex justify-between items-center flex-wrap gap-4">
               <h3 className="font-serif font-bold text-base text-[#2E2A27]">공방 운영 클래스 목록 ({classes.length}종)</h3>
-              <button
-                onClick={() => { setEditingClass(null); setPriceAndMetaDefaults(); setClassFormOpen(true); }}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#C98C63] text-white text-xs font-bold rounded-full cursor-pointer focus:outline-none"
-              >
-                <Plus className="w-3.5 h-3.5" /> 신규 클래스 개설 출시
-              </button>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleRecreateAll}
+                  disabled={isRecreating}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-[#A26745] text-xs font-bold rounded-full cursor-pointer focus:outline-none border border-amber-500/20 disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isRecreating ? 'animate-spin' : ''}`} /> 
+                  {isRecreating ? '복원 중...' : '기본 클래스 전체 복원'}
+                </button>
+                <button
+                  onClick={() => { setEditingClass(null); setPriceAndMetaDefaults(); setClassFormOpen(true); }}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#C98C63] text-white text-xs font-bold rounded-full cursor-pointer focus:outline-none"
+                >
+                  <Plus className="w-3.5 h-3.5" /> 신규 클래스 개설 출시
+                </button>
+              </div>
             </div>
 
             {/* Class Form dialog */}
