@@ -54,6 +54,12 @@ export default function ClassDetailModal({ classId, setView, setSelectedClassId 
   const [createdBookingId, setCreatedBookingId] = useState('');
   const [bookingLoading, setBookingLoading] = useState(false);
 
+  // Guest booking states
+  const [isGuestBooking, setIsGuestBooking] = useState(false);
+  const [guestName, setGuestName] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
+  const [guestPhone, setGuestPhone] = useState('');
+
   const isFavorited = wishlist.includes(selectedClass.id);
 
   // Available slots for simulation
@@ -115,11 +121,36 @@ export default function ClassDetailModal({ classId, setView, setSelectedClassId 
       return;
     }
 
+    if (!currentUser && isGuestBooking) {
+      if (!guestName.trim()) {
+        alert('예약자 성함을 입력해주세요.');
+        return;
+      }
+      if (selectedClass.price > 0 && !guestEmail.trim()) {
+        alert('이메일 주소를 입력해주세요.');
+        return;
+      }
+      if (!guestPhone.trim()) {
+        alert('휴대폰 번호를 입력해주세요.');
+        return;
+      }
+    }
+
     setBookingLoading(true);
     try {
-      const res = await bookClass(selectedClass.id, selectedDate, selectedTime, headCount, selectedCouponId || undefined);
+      const res = await bookClass(
+        selectedClass.id, 
+        selectedDate, 
+        selectedTime, 
+        headCount, 
+        selectedCouponId || undefined,
+        !currentUser ? guestName : undefined,
+        !currentUser ? guestEmail : undefined,
+        !currentUser ? guestPhone : undefined
+      );
       setCreatedBookingId(res.id);
       setBookingSuccess(true);
+      alert('예약이 완료되었습니다.');
       
       // Trigger confetti
       confetti({
@@ -164,7 +195,13 @@ export default function ClassDetailModal({ classId, setView, setSelectedClassId 
           </div>
           <div className="space-y-2">
             <h2 className="font-serif font-bold text-2xl text-[#2E2A27] dark:text-[#F3EFEA]">예약이 완료되었습니다!</h2>
-            <p className="text-xs text-gray-400">달그락 상점을 찾아주셔서 고맙습니다.</p>
+            {!currentUser ? (
+              <p className="text-xs text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-950/20 p-3 rounded-xl border border-amber-500/15 max-w-md mx-auto">
+                ⚠️ 비회원 체험 예약 완료! 예약번호와 입력하신 휴대폰 번호로 예약확인 탭에서 내역 조회가 가능합니다.
+              </p>
+            ) : (
+              <p className="text-xs text-gray-400">달그락 상점을 찾아주셔서 고맙습니다.</p>
+            )}
           </div>
 
           <div className="bg-[#FFFDF9] dark:bg-[#1F1B18] p-5 rounded-2xl border border-[#F6EFE7] dark:border-[#3D3530] text-left space-y-3 text-xs sm:text-sm">
@@ -186,7 +223,7 @@ export default function ClassDetailModal({ classId, setView, setSelectedClassId 
             </div>
             <div className="flex justify-between pt-1">
               <span className="text-gray-400 font-medium">결제 및 확정금액</span>
-              <span className="font-bold text-[#A26745] dark:text-[#D7A17E] text-base">{finalPrice.toLocaleString()}원</span>
+              <span className="font-bold text-[#A26745] dark:text-[#D7A17E] text-base">{finalPrice === 0 ? '무료' : `${finalPrice.toLocaleString()}원`}</span>
             </div>
           </div>
 
@@ -467,7 +504,7 @@ export default function ClassDetailModal({ classId, setView, setSelectedClassId 
               <div className="bg-[#FFFDF9] dark:bg-[#1F1B18] p-4 rounded-2xl border border-[#F6EFE7] dark:border-[#3D3530] space-y-2 text-xs">
                 <div className="flex justify-between">
                   <span className="text-gray-400">기본 단가 x {headCount}명</span>
-                  <span className="font-semibold">{basePrice.toLocaleString()}원</span>
+                  <span className="font-semibold">{basePrice === 0 ? '무료' : `${basePrice.toLocaleString()}원`}</span>
                 </div>
                 {activeCoupon && (
                   <div className="flex justify-between text-[#A26745] dark:text-[#D7A17E]">
@@ -483,7 +520,7 @@ export default function ClassDetailModal({ classId, setView, setSelectedClassId 
                 )}
                 <div className="flex justify-between pt-2 border-t border-gray-100 dark:border-zinc-800 font-bold text-sm">
                   <span className="text-[#2E2A27] dark:text-[#F3EFEA]">총 결제 금액</span>
-                  <span className="text-[#A26745] dark:text-[#D7A17E] text-base">{finalPrice.toLocaleString()}원</span>
+                  <span className="text-[#A26745] dark:text-[#D7A17E] text-base">{finalPrice === 0 ? '무료' : `${finalPrice.toLocaleString()}원`}</span>
                 </div>
               </div>
 
@@ -496,16 +533,76 @@ export default function ClassDetailModal({ classId, setView, setSelectedClassId 
                 >
                   {bookingLoading ? '처리 중...' : '원데이 클래스 예약하기'}
                 </button>
+              ) : isGuestBooking ? (
+                <div className="space-y-3 bg-[#F6EFE7]/30 dark:bg-[#3D3530]/20 p-4 rounded-2xl border border-[#E5D5C5]/45">
+                  <span className="text-xs font-bold text-[#A26745] dark:text-[#D7A17E] block">비회원 예약자 정보 입력</span>
+                  
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-gray-400 block">예약자 성함</label>
+                    <input 
+                      type="text" 
+                      placeholder="성함을 입력하세요"
+                      value={guestName}
+                      onChange={(e) => setGuestName(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-[#E5D5C5] dark:border-[#52473E] bg-[#FFFDF9] dark:bg-[#1F1B18] text-[#2E2A27] dark:text-[#F3EFEA] focus:outline-none focus:ring-1 focus:ring-[#C98C63]"
+                    />
+                  </div>
+                  
+                  {selectedClass.price > 0 && (
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-gray-400 block">이메일 주소</label>
+                      <input 
+                        type="email" 
+                        placeholder="example@email.com"
+                        value={guestEmail}
+                        onChange={(e) => setGuestEmail(e.target.value)}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-[#E5D5C5] dark:border-[#52473E] bg-[#FFFDF9] dark:bg-[#1F1B18] text-[#2E2A27] dark:text-[#F3EFEA] focus:outline-none focus:ring-1 focus:ring-[#C98C63]"
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-gray-400 block">휴대폰 번호 (예약 확인용)</label>
+                    <input 
+                      type="tel" 
+                      placeholder="010-1234-5678"
+                      value={guestPhone}
+                      onChange={(e) => setGuestPhone(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-[#E5D5C5] dark:border-[#52473E] bg-[#FFFDF9] dark:bg-[#1F1B18] text-[#2E2A27] dark:text-[#F3EFEA] focus:outline-none focus:ring-1 focus:ring-[#C98C63]"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleBooking}
+                    disabled={bookingLoading}
+                    className="w-full py-3.5 mt-2 rounded-full bg-[#C98C63] hover:bg-[#A26745] disabled:bg-gray-400 text-white font-bold text-xs shadow-md cursor-pointer transition-colors"
+                  >
+                    {bookingLoading ? '예약 처리 중...' : '비회원 체험 예약 완료하기'}
+                  </button>
+
+                  <button
+                    onClick={() => setIsGuestBooking(false)}
+                    className="w-full text-center text-[10px] text-gray-400 hover:underline pt-1 block focus:outline-none"
+                  >
+                    ← 로그인하고 가입 혜택 받기
+                  </button>
+                </div>
               ) : (
                 <div className="space-y-2">
                   <button
                     onClick={() => setView('login')}
-                    className="w-full py-4 rounded-full bg-[#2E2A27] hover:opacity-90 text-white font-bold text-sm shadow-md cursor-pointer"
+                    className="w-full py-3.5 rounded-full bg-[#2E2A27] hover:opacity-90 text-white font-bold text-xs shadow-md cursor-pointer"
                   >
                     로그인하고 예약하기
                   </button>
+                  <button
+                    onClick={() => setIsGuestBooking(true)}
+                    className="w-full py-3.5 rounded-full bg-[#FFFDF9] dark:bg-[#1F1B18] border border-[#C98C63] hover:bg-[#F6EFE7]/40 text-[#C98C63] font-bold text-xs shadow-xs cursor-pointer"
+                  >
+                    비회원으로 무료 예약하기
+                  </button>
                   <p className="text-[10px] text-gray-400 text-center">
-                    * 비회원은 예약이 불가능하며 로그인 후 2,000p 보너스를 즉시 증정합니다.
+                    * 신규 가입 후 예약 시 2,000p 및 오픈 100% 쿠폰이 즉시 지급됩니다!
                   </p>
                 </div>
               )}

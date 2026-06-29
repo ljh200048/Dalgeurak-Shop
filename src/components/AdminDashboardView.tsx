@@ -14,7 +14,8 @@ import {
   FileText, 
   Sparkles, 
   AlertCircle,
-  Clock
+  Clock,
+  Send
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -32,10 +33,25 @@ export default function AdminDashboardView() {
     adminCancelBooking, 
     adminAddNotice, 
     adminDeleteNotice, 
-    adminDeleteReview 
+    adminDeleteReview,
+    telegramConfig,
+    updateTelegramConfig
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'stats' | 'classes' | 'bookings' | 'notices' | 'reviews'>('stats');
+  const [activeTab, setActiveTab] = useState<'stats' | 'classes' | 'bookings' | 'notices' | 'reviews' | 'telegram'>('stats');
+
+  // Telegram Integration local states
+  const [telegramBotToken, setTelegramBotToken] = useState(telegramConfig.botToken || '');
+  const [telegramChatId, setTelegramChatId] = useState(telegramConfig.chatId || '');
+  const [telegramEnabled, setTelegramEnabled] = useState(telegramConfig.isEnabled || false);
+  const [testSending, setTestSending] = useState(false);
+
+  // Sync state if context config updates
+  React.useEffect(() => {
+    setTelegramBotToken(telegramConfig.botToken);
+    setTelegramChatId(telegramConfig.chatId);
+    setTelegramEnabled(telegramConfig.isEnabled);
+  }, [telegramConfig]);
 
   // Dialog / Edit states
   const [classFormOpen, setClassFormOpen] = useState(false);
@@ -198,7 +214,8 @@ export default function AdminDashboardView() {
           { id: 'classes', label: '🎨 클래스 상품 관리' },
           { id: 'bookings', label: '📅 수강 예약 승인/출석' },
           { id: 'notices', label: '📢 공지 & 배너 작성' },
-          { id: 'reviews', label: '⭐ 수강 후기 모니터링' }
+          { id: 'reviews', label: '⭐ 수강 후기 모니터링' },
+          { id: 'telegram', label: '✈️ 텔레그램 알림 연동' }
         ].map(tab => (
           <button
             key={tab.id}
@@ -653,6 +670,127 @@ export default function AdminDashboardView() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* TAB 6: telegram (텔레그램 연동 설정) */}
+        {activeTab === 'telegram' && (
+          <div className="space-y-6 max-w-2xl">
+            <div className="space-y-1">
+              <h3 className="font-serif font-bold text-base text-[#2E2A27] dark:text-[#F3EFEA]">✈️ 실시간 텔레그램 예약 알림 연동</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                수강생이 체험 또는 일반 예약을 완료할 때마다 관리자의 개인 텔레그램 채팅방/채널로 상세 예약 정보를 즉시 푸시 알림으로 수신합니다.
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-[#27221E] border border-[#F6EFE7] dark:border-[#3D3530] rounded-2xl p-6 space-y-6 shadow-2xs">
+              {/* Toggle Switch */}
+              <div className="flex items-center justify-between border-b border-gray-100 dark:border-zinc-850 pb-4">
+                <div>
+                  <h4 className="text-sm font-bold text-[#2E2A27] dark:text-[#F3EFEA]">실시간 알림 사용 여부</h4>
+                  <p className="text-[11px] text-gray-400">활성화 시, 예약 발생 즉시 지정된 봇이 메시지를 발송합니다.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setTelegramEnabled(!telegramEnabled)}
+                  className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-200 focus:outline-none ${
+                    telegramEnabled ? 'bg-[#C98C63]' : 'bg-gray-300 dark:bg-zinc-700'
+                  }`}
+                >
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-200 ease-in-out ${
+                      telegramEnabled ? 'translate-x-6' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Bot Token */}
+              <div className="space-y-1.5 text-xs">
+                <label className="font-bold text-gray-500 dark:text-gray-400 block">1. 텔레그램 봇 토큰 (Bot Token)</label>
+                <input
+                  type="password"
+                  placeholder="예: 5938201948:AAEtR7z_eXo-f921H8_gO-E31m8yZ..."
+                  value={telegramBotToken}
+                  onChange={(e) => setTelegramBotToken(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-[#E5D5C5] dark:border-[#52473E] bg-[#FFFDF9] dark:bg-[#1F1B18] text-[#2E2A27] dark:text-[#F3EFEA] focus:outline-none focus:ring-1 focus:ring-[#C98C63] font-mono"
+                />
+                <p className="text-[10px] text-gray-400">
+                  텔레그램에서 <a href="https://t.me/BotFather" target="_blank" rel="noreferrer" className="text-[#C98C63] underline">@BotFather</a>를 검색하여 새 봇을 생성하고 받은 HTTP API Token을 입력해주세요.
+                </p>
+              </div>
+
+              {/* Chat ID */}
+              <div className="space-y-1.5 text-xs">
+                <label className="font-bold text-gray-500 dark:text-gray-400 block">2. 수신 대상 채팅 ID (Chat ID)</label>
+                <input
+                  type="text"
+                  placeholder="예: 123456789"
+                  value={telegramChatId}
+                  onChange={(e) => setTelegramChatId(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-[#E5D5C5] dark:border-[#52473E] bg-[#FFFDF9] dark:bg-[#1F1B18] text-[#2E2A27] dark:text-[#F3EFEA] focus:outline-none focus:ring-1 focus:ring-[#C98C63] font-mono"
+                />
+                <p className="text-[10px] text-gray-400">
+                  메시지를 수신할 사용자의 고유 ID입니다. 생성한 봇에 /start 메시지를 보낸 후, <a href="https://t.me/userinfobot" target="_blank" rel="noreferrer" className="text-[#C98C63] underline">@userinfobot</a> 등에서 ID를 확인해 입력하십시오.
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-wrap gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!telegramBotToken || !telegramChatId) {
+                      alert("테스트 발송을 위해 봇 토큰과 채팅 ID를 입력해주세요.");
+                      return;
+                    }
+                    setTestSending(true);
+                    try {
+                      const msg = `🛎️ *[달그락 공방 - 테스트 메시지]*\n\n텔레그램 알림 봇 연동에 성공했습니다! 수강생 예약 시 이 채널로 실시간 알림이 전송됩니다.`;
+                      const res = await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          chat_id: telegramChatId,
+                          text: msg,
+                          parse_mode: 'Markdown'
+                        })
+                      });
+                      if (res.ok) {
+                        alert("테스트 메시지를 성공적으로 전송했습니다! 텔레그램 채팅방을 확인해 주세요.");
+                      } else {
+                        const errText = await res.text();
+                        alert(`전송 실패 (상태코드: ${res.status}): ${errText}`);
+                      }
+                    } catch (e: any) {
+                      alert(`오류 발생: ${e.message}`);
+                    } finally {
+                      setTestSending(false);
+                    }
+                  }}
+                  disabled={testSending}
+                  className="px-4 py-2 text-xs font-bold rounded-xl border border-[#C98C63] text-[#C98C63] hover:bg-[#C98C63] hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  {testSending ? '테스트 전송 중...' : '알림 테스트 발송'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await updateTelegramConfig({
+                      botToken: telegramBotToken,
+                      chatId: telegramChatId,
+                      isEnabled: telegramEnabled
+                    });
+                    alert("설정이 안전하게 저장되었습니다.");
+                  }}
+                  className="px-5 py-2 text-xs font-bold rounded-xl bg-[#C98C63] hover:bg-[#A26745] text-white transition-colors cursor-pointer"
+                >
+                  설정 저장 완료
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

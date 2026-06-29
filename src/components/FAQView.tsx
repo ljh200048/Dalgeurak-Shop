@@ -105,6 +105,32 @@ export default function FAQView() {
         })}
       </div>
 
+      {/* Direct Contact Inquiries */}
+      <div className="bg-[#FFFDF9] dark:bg-[#27221E] border border-[#E5D5C5] dark:border-[#3D3530] rounded-3xl p-6 sm:p-8 text-center space-y-4 shadow-3xs">
+        <h3 className="font-serif font-bold text-lg text-[#2E2A27] dark:text-[#F3EFEA]">더 궁금한 점이 있으신가요?</h3>
+        <p className="text-xs sm:text-sm text-gray-500 max-w-md mx-auto leading-relaxed">
+          달그락 상점의 원데이 클래스, 단체 및 출강 워크숍, 소품 굿즈 구매에 관한 개별 문의사항은 카카오톡이나 인스타그램 공식 채널을 통해 1:1로 신속하고 따뜻하게 상담 받으실 수 있습니다.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+          <a
+            href="https://open.kakao.com/o/sdZBgKBi"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-[#FEE500] text-[#191919] text-xs font-bold hover:opacity-95 transition-all shadow-3xs cursor-pointer"
+          >
+            💬 카카오톡 1:1 오픈채팅 문의
+          </a>
+          <a
+            href="https://www.instagram.com/cozy_clink_114?igsh=MWVucW1jcGFwa2J2bQ=="
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F56040] text-white text-xs font-bold hover:opacity-95 transition-all shadow-3xs cursor-pointer"
+          >
+            📸 인스타그램 공식 DM 문의
+          </a>
+        </div>
+      </div>
+
     </div>
   );
 }

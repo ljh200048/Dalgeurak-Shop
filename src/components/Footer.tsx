@@ -30,26 +30,20 @@ export default function Footer({ setView }: FooterProps) {
             {/* Social Icons */}
             <div className="flex space-x-3 pt-2">
               <a 
-                href="https://instagram.com" 
+                href="https://www.instagram.com/cozy_clink_114?igsh=MWVucW1jcGFwa2J2bQ==" 
                 target="_blank" 
                 rel="noreferrer"
                 className="w-8 h-8 rounded-full bg-[#FFFDF9] dark:bg-[#2E2A27] flex items-center justify-center hover:bg-[#C98C63] dark:hover:bg-[#C98C63] hover:text-white dark:hover:text-white transition-all text-[#2E2A27] dark:text-[#F3EFEA]"
+                title="인스타그램 공식 채널"
               >
                 <Instagram className="w-4 h-4" />
               </a>
               <a 
-                href="https://blog.naver.com" 
+                href="https://open.kakao.com/o/sdZBgKBi" 
                 target="_blank" 
                 rel="noreferrer"
                 className="w-8 h-8 rounded-full bg-[#FFFDF9] dark:bg-[#2E2A27] flex items-center justify-center hover:bg-[#C98C63] dark:hover:bg-[#C98C63] hover:text-white dark:hover:text-white transition-all text-[#2E2A27] dark:text-[#F3EFEA]"
-              >
-                <Compass className="w-4 h-4" />
-              </a>
-              <a 
-                href="https://pf.kakao.com" 
-                target="_blank" 
-                rel="noreferrer"
-                className="w-8 h-8 rounded-full bg-[#FFFDF9] dark:bg-[#2E2A27] flex items-center justify-center hover:bg-[#C98C63] dark:hover:bg-[#C98C63] hover:text-white dark:hover:text-white transition-all text-[#2E2A27] dark:text-[#F3EFEA]"
+                title="카카오톡 1:1 오픈채팅 문의"
               >
                 <Phone className="w-4 h-4" />
               </a>
@@ -97,7 +91,7 @@ export default function Footer({ setView }: FooterProps) {
             </h3>
             <div className="space-y-2 text-xs sm:text-sm text-[#2E2A27]/80 dark:text-[#F3EFEA]/70">
               <p className="font-semibold text-base text-[#2E2A27] dark:text-[#F3EFEA]">
-                02-1234-1234
+                010-9879-3491
               </p>
               <p>화요일 - 일요일: 11:00 ~ 20:00</p>
               <p>점심시간: 12:00 ~ 13:00</p>

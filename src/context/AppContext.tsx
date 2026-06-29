@@ -62,9 +62,19 @@ interface AppContextType {
   logout: () => Promise<void>;
   
   // App Functions
-  bookClass: (classId: string, date: string, time: string, headCount: number, couponId?: string) => Promise<Booking>;
+  bookClass: (
+    classId: string, 
+    date: string, 
+    time: string, 
+    headCount: number, 
+    couponId?: string,
+    guestName?: string,
+    guestEmail?: string,
+    guestPhone?: string
+  ) => Promise<Booking>;
   cancelBooking: (bookingId: string) => Promise<void>;
   toggleFavoriteClass: (classId: string) => void;
+  claimCoupon: (couponId: string) => Promise<void>;
   
   // Cart Functions
   addToCart: (productId: string, quantity: number) => void;
@@ -90,6 +100,8 @@ interface AppContextType {
   adminAddNotice: (notice: Omit<Notice, 'id' | 'createdAt' | 'views'>) => Promise<void>;
   adminDeleteNotice: (noticeId: string) => Promise<void>;
   adminDeleteReview: (reviewId: string) => Promise<void>;
+  telegramConfig: { botToken: string; chatId: string; isEnabled: boolean };
+  updateTelegramConfig: (config: { botToken: string; chatId: string; isEnabled: boolean }) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -111,6 +123,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Client only states that also sync to user profile
   const [cart, setCart] = useState<{ productId: string; quantity: number }[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
+  const [telegramConfig, setTelegramConfig] = useState<{ botToken: string; chatId: string; isEnabled: boolean }>({
+    botToken: '',
+    chatId: '',
+    isEnabled: false
+  });
 
   // Local storage backup keys
   const STORAGE_PREFIX = 'dalgeurak_';
@@ -162,6 +179,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             loadedClasses = INITIAL_CLASSES;
           } else {
             loadedClasses = classesSnapshot.docs.map(doc => doc.data() as WorkshopClass);
+            if (!loadedClasses.some(c => c.id === 'class-free-kit')) {
+              const freeKitClass = INITIAL_CLASSES.find(c => c.id === 'class-free-kit')!;
+              await setDoc(doc(classesCol, freeKitClass.id), freeKitClass);
+              loadedClasses = [...loadedClasses, freeKitClass];
+            }
           }
 
           // Products
@@ -223,20 +245,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           if (couponsSnapshot.empty) {
             const initialCoupons: Coupon[] = [
               { id: 'coupon-welcome', code: 'WELCOME10', name: '가입 환영 10% 쿠폰', discountType: 'percent', discountValue: 10, description: '전체 클래스 10% 예약 할인', expiryDate: '2026-12-31', status: 'active' },
-              { id: 'coupon-opening', code: 'DALGEURAK3000', name: '정식 오픈 3천원 할인권', discountType: 'amount', discountValue: 3000, description: '체험 예약 시 즉시 3,000원 할인', expiryDate: '2026-09-30', status: 'active' }
+              { id: 'coupon-opening', code: 'DALGEURAK3000', name: '정식 오픈 3천원 할인권', discountType: 'amount', discountValue: 3000, description: '체험 예약 시 즉시 3,000원 할인', expiryDate: '2026-09-30', status: 'active' },
+              { id: 'coupon-free-event', code: 'FREE100', name: '오픈 기념 100% 무료 체험 쿠폰', discountType: 'percent', discountValue: 100, description: '원하는 클래스 100% 무료 예약 가능!', expiryDate: '2026-12-31', status: 'active' }
             ];
             for (const cp of initialCoupons) {
               await setDoc(doc(couponsCol, cp.id), cp);
             }
             loadedCoupons = initialCoupons;
           } else {
-            loadedCoupons = couponsSnapshot.docs.map(doc => doc.data() as Coupon);
+            // Check if coupon-free-event exists, if not add it
+            const existing = couponsSnapshot.docs.map(doc => doc.data() as Coupon);
+            if (!existing.some(c => c.id === 'coupon-free-event')) {
+              const freeCoupon: Coupon = { id: 'coupon-free-event', code: 'FREE100', name: '오픈 기념 100% 무료 체험 쿠폰', discountType: 'percent', discountValue: 100, description: '원하는 클래스 100% 무료 예약 가능!', expiryDate: '2026-12-31', status: 'active' };
+              await setDoc(doc(couponsCol, freeCoupon.id), freeCoupon);
+              loadedCoupons = [...existing, freeCoupon];
+            } else {
+              loadedCoupons = existing;
+            }
           }
 
         } catch (fsError) {
           console.warn("Firestore seeding/loading failed or offline, falling back to LocalStorage:", fsError);
           // Load from LocalStorage or fallback to seed
           loadedClasses = getStorage<WorkshopClass[]>('classes', INITIAL_CLASSES);
+          if (!loadedClasses.some(c => c.id === 'class-free-kit')) {
+            const freeKitClass = INITIAL_CLASSES.find(c => c.id === 'class-free-kit')!;
+            loadedClasses = [...loadedClasses, freeKitClass];
+          }
           loadedProducts = getStorage<ProductItem[]>('products', INITIAL_PRODUCTS);
           loadedNotices = getStorage<Notice[]>('notices', INITIAL_NOTICES);
           loadedGallery = getStorage<GalleryItem[]>('gallery', INITIAL_GALLERY);
@@ -244,7 +279,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           loadedBookings = getStorage<Booking[]>('bookings', []);
           loadedCoupons = getStorage<Coupon[]>('coupons', [
             { id: 'coupon-welcome', code: 'WELCOME10', name: '가입 환영 10% 쿠폰', discountType: 'percent', discountValue: 10, description: '전체 클래스 10% 예약 할인', expiryDate: '2026-12-31', status: 'active' },
-            { id: 'coupon-opening', code: 'DALGEURAK3000', name: '정식 오픈 3천원 할인권', discountType: 'amount', discountValue: 3000, description: '체험 예약 시 즉시 3,000원 할인', expiryDate: '2026-09-30', status: 'active' }
+            { id: 'coupon-opening', code: 'DALGEURAK3000', name: '정식 오픈 3천원 할인권', discountType: 'amount', discountValue: 3000, description: '체험 예약 시 즉시 3,000원 할인', expiryDate: '2026-09-30', status: 'active' },
+            { id: 'coupon-free-event', code: 'FREE100', name: '오픈 기념 100% 무료 체험 쿠폰', discountType: 'percent', discountValue: 100, description: '원하는 클래스 100% 무료 예약 가능!', expiryDate: '2026-12-31', status: 'active' }
           ]);
         }
 
@@ -256,6 +292,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setReviews(loadedReviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
         setBookings(loadedBookings.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
         setCoupons(loadedCoupons);
+
+        // Load Telegram settings
+        try {
+          const telegramSnap = await getDoc(doc(db, 'settings', 'telegram'));
+          if (telegramSnap.exists()) {
+            setTelegramConfig(telegramSnap.data() as any);
+          } else {
+            const envToken = (import.meta as any).env.VITE_TELEGRAM_BOT_TOKEN || '';
+            const envChatId = (import.meta as any).env.VITE_TELEGRAM_CHAT_ID || '';
+            const isEnvEnabled = !!(envToken && envChatId);
+            setTelegramConfig({
+              botToken: envToken,
+              chatId: envChatId,
+              isEnabled: isEnvEnabled
+            });
+          }
+        } catch (e) {
+          console.warn("Failed to load telegram config from firestore:", e);
+          const envToken = (import.meta as any).env.VITE_TELEGRAM_BOT_TOKEN || '';
+          const envChatId = (import.meta as any).env.VITE_TELEGRAM_CHAT_ID || '';
+          setTelegramConfig({
+            botToken: getStorage<string>('telegram_token', envToken),
+            chatId: getStorage<string>('telegram_chat_id', envChatId),
+            isEnabled: getStorage<boolean>('telegram_enabled', !!(envToken && envChatId))
+          });
+        }
 
       } catch (err) {
         console.error("Critical initialization failure:", err);
@@ -287,7 +349,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || '익명수강생',
               role: firebaseUser.email === 'admin@dalgeurak.com' || firebaseUser.email === 'lch200048@gmail.com' ? 'admin' : 'user',
               points: 2000, // Initial sign-up gift points
-              coupons: ['coupon-welcome', 'coupon-opening'],
+              coupons: ['coupon-welcome', 'coupon-opening', 'coupon-free-event'],
               favoriteClasses: [],
               cart: [],
               createdAt: new Date().toISOString()
@@ -306,7 +368,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             displayName: firebaseUser.displayName || '수강생',
             role: firebaseUser.email === 'admin@dalgeurak.com' ? 'admin' : 'user',
             points: 2000,
-            coupons: ['coupon-welcome', 'coupon-opening'],
+            coupons: ['coupon-welcome', 'coupon-opening', 'coupon-free-event'],
             favoriteClasses: [],
             cart: [],
             createdAt: new Date().toISOString()
@@ -371,7 +433,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         displayName: firebaseUser.displayName || email.split('@')[0],
         role: email === 'admin@dalgeurak.com' || email === 'lch200048@gmail.com' ? 'admin' : 'user',
         points: 2000,
-        coupons: ['coupon-welcome', 'coupon-opening'],
+        coupons: ['coupon-welcome', 'coupon-opening', 'coupon-free-event'],
         favoriteClasses: [],
         cart: [],
         createdAt: new Date().toISOString()
@@ -392,7 +454,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       displayName: name,
       role: email === 'admin@dalgeurak.com' || email === 'lch200048@gmail.com' ? 'admin' : role,
       points: 2000, // 2000 pts welcome
-      coupons: ['coupon-welcome', 'coupon-opening'],
+      coupons: ['coupon-welcome', 'coupon-opening', 'coupon-free-event'],
       favoriteClasses: [],
       cart: [],
       createdAt: new Date().toISOString()
@@ -422,7 +484,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     date: string, 
     time: string, 
     headCount: number,
-    couponId?: string
+    couponId?: string,
+    guestName?: string,
+    guestEmail?: string,
+    guestPhone?: string
   ): Promise<Booking> => {
     const selClass = classes.find(c => c.id === classId);
     if (!selClass) throw new Error("선택하신 클래스가 존재하지 않습니다.");
@@ -445,9 +510,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const bookingId = `book-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const newBooking: Booking = {
       id: bookingId,
-      userId: currentUser?.uid || 'guest-user',
-      userName: currentUser?.displayName || '비회원 수강생',
-      userEmail: currentUser?.email || 'guest@example.com',
+      userId: currentUser?.uid || `guest-${Date.now()}`,
+      userName: currentUser?.displayName || guestName || '비회원 수강생',
+      userEmail: currentUser?.email || guestEmail || 'guest@example.com',
       classId: selClass.id,
       className: selClass.name,
       classImage: selClass.imageUrl,
@@ -457,7 +522,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       totalPrice: finalPrice,
       status: 'pending',
       qrCode: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=DALGEURAK-RESERVE-${bookingId}`,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      guestPhone: guestPhone
     };
 
     // Update locally
@@ -484,6 +550,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         await setDoc(doc(db, 'users', currentUser.uid), updatedProfile);
         setCurrentUser(updatedProfile);
       }
+
+      // Send Telegram Notification
+      sendTelegramNotification(newBooking);
     } catch (e) {
       console.warn("Firestore booking write failed, saved locally:", e);
       // Fallback update
@@ -495,9 +564,56 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         };
         setCurrentUser(updatedProfile);
       }
+
+      // Try sending Telegram Notification as fallback
+      sendTelegramNotification(newBooking);
     }
 
     return newBooking;
+  };
+
+  const sendTelegramNotification = async (booking: Booking) => {
+    const config = telegramConfig;
+    if (!config.isEnabled || !config.botToken || !config.chatId) {
+      return;
+    }
+    
+    const message = `🔔 *[달그락 공방 - 새로운 예약 알림]*\n\n` +
+      `• *클래스명*: ${booking.className}\n` +
+      `• *예약자명*: ${booking.userName}\n` +
+      `• *연락처*: ${booking.guestPhone || '미기재'}\n` +
+      `• *예약일시*: ${booking.date} (${booking.time})\n` +
+      `• *예약인원*: ${booking.headCount}명\n` +
+      `• *결제금액*: ${booking.totalPrice === 0 ? '무료 체험' : booking.totalPrice.toLocaleString() + '원'}\n` +
+      `• *예약번호*: ${booking.id}`;
+      
+    try {
+      await fetch(`https://api.telegram.org/bot${config.botToken}/sendMessage`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          chat_id: config.chatId,
+          text: message,
+          parse_mode: 'Markdown'
+        })
+      });
+    } catch (err) {
+      console.error("Failed to send telegram notification:", err);
+    }
+  };
+
+  const updateTelegramConfig = async (config: { botToken: string; chatId: string; isEnabled: boolean }) => {
+    setTelegramConfig(config);
+    setStorage('telegram_token', config.botToken);
+    setStorage('telegram_chat_id', config.chatId);
+    setStorage('telegram_enabled', config.isEnabled);
+    try {
+      await setDoc(doc(db, 'settings', 'telegram'), config);
+    } catch (e) {
+      console.warn("Could not save telegram config to Firestore:", e);
+    }
   };
 
   // User Action: Cancel booking
@@ -532,6 +648,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } catch (e) {
         console.warn("Firestore wishlist sync failed:", e);
       }
+    }
+  };
+
+  // User Action: Claim Coupon
+  const claimCoupon = async (couponId: string) => {
+    if (!currentUser) throw new Error("로그인이 필요합니다.");
+    if (currentUser.coupons.includes(couponId)) {
+      throw new Error("이미 보유 중인 쿠폰입니다.");
+    }
+    const updatedCoupons = [...currentUser.coupons, couponId];
+    const updatedProfile = { ...currentUser, coupons: updatedCoupons };
+    setCurrentUser(updatedProfile);
+    try {
+      await setDoc(doc(db, 'users', currentUser.uid), updatedProfile);
+    } catch (e) {
+      console.warn("Firestore claim coupon failed, saved locally:", e);
     }
   };
 
@@ -965,6 +1097,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       bookClass,
       cancelBooking,
       toggleFavoriteClass,
+      claimCoupon,
       
       addToCart,
       updateCartQuantity,
@@ -986,7 +1119,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       adminCancelBooking,
       adminAddNotice,
       adminDeleteNotice,
-      adminDeleteReview
+      adminDeleteReview,
+      telegramConfig,
+      updateTelegramConfig
     }}>
       {children}
     </AppContext.Provider>

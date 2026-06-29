@@ -49,6 +49,16 @@ function AppContent() {
         return <AdminDashboardView />;
       case 'booking-check':
         return <BookingCheckView setView={setView} />;
+      case 'class-detail':
+        return selectedClassId ? (
+          <ClassDetailModal
+            classId={selectedClassId}
+            setView={setView}
+            setSelectedClassId={setSelectedClassId}
+          />
+        ) : (
+          <ClassesView setView={setView} setSelectedClassId={setSelectedClassId} />
+        );
       default:
         return <HomeView setView={setView} setSelectedClassId={setSelectedClassId} />;
     }
@@ -67,15 +77,6 @@ function AppContent() {
       <main className="min-h-[70vh] transition-colors duration-300">
         {renderView()}
       </main>
-
-      {/* Class Detail modal (Shows above the current view when selected) */}
-      {selectedClassId && (
-        <ClassDetailModal
-          classId={selectedClassId}
-          setView={setView}
-          setSelectedClassId={setSelectedClassId}
-        />
-      )}
 
       <Footer setView={setView} />
     </div>

@@ -46,6 +46,7 @@ export interface Booking {
   status: 'pending' | 'approved' | 'cancelled' | 'attended';
   qrCode: string;
   createdAt: string;
+  guestPhone?: string;
 }
 
 export interface Review {

@@ -200,6 +200,46 @@ export const INITIAL_CLASSES: WorkshopClass[] = [
     precautions: ['식기는 가마에서 220도 고온으로 굽는 과정이 필요하여 클래스 후 20분의 오븐 소성 시간이 추가 대기가 요구됩니다.', '전자레인지 및 식기세척기 사용이 가능한 안전한 식기입니다.'],
     refundPolicy: '체험일 3일 전 100% 환불, 2일 전 50% 환불',
     isFeatured: true
+  },
+  {
+    id: 'class-free-event',
+    name: '[무료 이벤트] 오프닝 달그락 감성 디퓨저 미니 체험 클래스',
+    description: '달그락 상점 오픈을 기념하여 진행하는 100% 무료 미니 디퓨저 만들기 세션',
+    categories: ['디퓨저', '무료', '이벤트', '선물'],
+    level: '입문',
+    duration: '45분',
+    maxPeople: 8,
+    price: 0,
+    imageUrl: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=600',
+    rating: 5.0,
+    reviewCount: 12,
+    intro: '달그락 상점의 정식 오픈을 기념하여 가볍게 손끝의 기쁨을 느낄 수 있는 미니 디퓨저 무료 체험 세션입니다. 웰컴 드링크와 함께 나만의 시그니처 향기를 담은 50ml 미니 디퓨저를 무료로 제작해 가세요.',
+    materials: ['곡물 발효 주정 디퓨저 베이스', '천연 아로마 향료 5종', '미니 유리 공병 (50ml)'],
+    provided: ['웰컴 티', '선물용 패키징'],
+    completedItem: '오프닝 미니 디퓨저 1구 (50ml)',
+    precautions: ['해당 클래는 100% 무료 이벤트로 진행되므로, 계정당 1회만 예약 가능합니다.'],
+    refundPolicy: '무료 이벤트로 환불금은 발생하지 않으나, 불참 시 다른 수강생을 위해 꼭 사전 취소 부탁드립니다.',
+    isFeatured: true
+  },
+  {
+    id: 'class-free-kit',
+    name: '[무료 체험] 달그락 키트 체험 클래스',
+    description: '달그락 상점의 시그니처 소품을 손쉽게 조립하고 가공해볼 수 있는 100% 무료 키트 체험',
+    categories: ['키트', '무료', '체험', '소품'],
+    level: '입문',
+    duration: '30분',
+    maxPeople: 10,
+    price: 0,
+    imageUrl: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&q=80&w=600',
+    rating: 4.9,
+    reviewCount: 8,
+    intro: '달그락 상점이 자랑하는 소품 키트를 직접 만져보고 조립하여 완성해보는 초간단 미니 체험 클래스입니다. 아기자기하고 포근한 달그락 감성이 가득 담긴 시그니처 패키지 키트를 무상으로 선물받고 조작해보는 행복을 느껴보세요.',
+    materials: ['달그락 DIY 가공 키트 세트', '미니 우드 스틱', '감성 무지 부직포 파우치'],
+    provided: ['웰컴 음료', '완성품 전용 에코 쇼핑백'],
+    completedItem: '달그락 시그니처 DIY 소품 키트 완제품 1개',
+    precautions: ['해당 체험은 1인당 일평생 1회에 한하여 무료 예약 및 수강이 지원됩니다.'],
+    refundPolicy: '무료 체험이므로 취소 시 위약금 및 공제 금액은 전혀 없으나, 노쇼 예방과 원활한 진행을 위해 불참 시 최소 1일 전 취소 부탁드립니다.',
+    isFeatured: true
   }
 ];
 

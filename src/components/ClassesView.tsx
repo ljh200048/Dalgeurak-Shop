@@ -228,7 +228,7 @@ export default function ClassesView({ setView, setSelectedClassId }: ClassesView
                     <div className="text-right">
                       <span className="text-[10px] text-gray-400 block">체험 비용</span>
                       <span className="text-base font-bold text-[#A26745] dark:text-[#D7A17E]">
-                        {item.price.toLocaleString()}원~
+                        {item.price === 0 ? '무료 이벤트' : `${item.price.toLocaleString()}원~`}
                       </span>
                     </div>
                   </div>
