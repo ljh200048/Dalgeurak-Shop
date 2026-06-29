@@ -34,7 +34,8 @@ export default function Header({ currentView, setView, onSearchToggle, darkMode,
 
   const navItems = [
     { label: '홈', view: 'home' },
-    { label: '체험예약', view: 'classes' },
+    { label: '무료 체험', view: 'freetrials' },
+    { label: '클래스', view: 'classes' },
     { label: '굿즈샵', view: 'goods' },
     { label: '갤러리', view: 'gallery' },
     { label: '후기', view: 'reviews' },

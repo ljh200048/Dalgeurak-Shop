@@ -267,6 +267,11 @@ export default function ClassDetailModal({ classId, setView, setSelectedClassId 
             
             {/* Header Title Info */}
             <div className="space-y-4">
+              {selectedClass.id === 'class-free-kit' && (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#C98C63] text-white text-[11px] font-bold tracking-wide animate-pulse shadow-xs">
+                  <Gift className="w-3.5 h-3.5" /> 100% 무상 혜택 프리미엄 체험 패키지
+                </div>
+              )}
               <div className="flex flex-wrap items-center gap-2">
                 <span className="px-2.5 py-0.5 rounded-md bg-[#C98C63]/10 text-[#C98C63] text-xs font-bold">
                   {selectedClass.level} 난이도
@@ -390,7 +395,20 @@ export default function ClassDetailModal({ classId, setView, setSelectedClassId 
               
               {/* Specs Box */}
               <div className="space-y-3 pb-4 border-b border-[#F6EFE7]/80 dark:border-[#3D3530]/60">
-                <h3 className="font-serif font-bold text-lg text-[#2E2A27] dark:text-[#F3EFEA]">실시간 예약하기</h3>
+                <h3 className="font-serif font-bold text-lg text-[#2E2A27] dark:text-[#F3EFEA]">
+                  {selectedClass.price === 0 ? '실시간 무료체험 신청' : '실시간 예약하기'}
+                </h3>
+
+                {selectedClass.id === 'class-free-kit' && (
+                  <div className="p-3 bg-[#C98C63]/5 dark:bg-[#C98C63]/10 border border-[#C98C63]/15 rounded-xl text-xs space-y-1">
+                    <span className="font-bold text-[#C98C63] flex items-center gap-1">
+                      🎁 특별 무료체험 혜택
+                    </span>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed">
+                      별도의 회원가입 없이 이름과 휴대폰 번호 입력만으로 간편 예약하고 실물 키트를 현장에서 무상 수령하실 수 있습니다!
+                    </p>
+                  </div>
+                )}
                 
                 <div className="grid grid-cols-2 gap-4 text-xs">
                   <div className="flex items-center gap-2 text-gray-500">
@@ -458,29 +476,36 @@ export default function ClassDetailModal({ classId, setView, setSelectedClassId 
               </div>
 
               {/* Step 3: Headcount Counter */}
-              <div className="flex items-center justify-between py-2 border-b border-[#F6EFE7]/80 dark:border-[#3D3530]/60 text-xs">
-                <span className="font-bold text-gray-400">3. 예약 인원</span>
-                <div className="flex items-center gap-3">
-                  <button
-                    disabled={headCount <= 1}
-                    onClick={() => setHeadCount(c => c - 1)}
-                    className="w-8 h-8 rounded-full border border-gray-200 dark:border-zinc-800 flex items-center justify-center font-bold hover:bg-[#F6EFE7] dark:hover:bg-[#3D3530] disabled:opacity-30"
-                  >
-                    -
-                  </button>
-                  <span className="font-bold text-sm w-4 text-center">{headCount}</span>
-                  <button
-                    disabled={headCount >= selectedClass.maxPeople}
-                    onClick={() => setHeadCount(c => c + 1)}
-                    className="w-8 h-8 rounded-full border border-gray-200 dark:border-zinc-800 flex items-center justify-center font-bold hover:bg-[#F6EFE7] dark:hover:bg-[#3D3530] disabled:opacity-30"
-                  >
-                    +
-                  </button>
+              {selectedClass.price > 0 ? (
+                <div className="flex items-center justify-between py-2 border-b border-[#F6EFE7]/80 dark:border-[#3D3530]/60 text-xs">
+                  <span className="font-bold text-gray-400">3. 예약 인원</span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      disabled={headCount <= 1}
+                      onClick={() => setHeadCount(c => c - 1)}
+                      className="w-8 h-8 rounded-full border border-gray-200 dark:border-zinc-800 flex items-center justify-center font-bold hover:bg-[#F6EFE7] dark:hover:bg-[#3D3530] disabled:opacity-30"
+                    >
+                      -
+                    </button>
+                    <span className="font-bold text-sm w-4 text-center">{headCount}</span>
+                    <button
+                      disabled={headCount >= selectedClass.maxPeople}
+                      onClick={() => setHeadCount(c => c + 1)}
+                      className="w-8 h-8 rounded-full border border-gray-200 dark:border-zinc-800 flex items-center justify-center font-bold hover:bg-[#F6EFE7] dark:hover:bg-[#3D3530] disabled:opacity-30"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex items-center justify-between py-2.5 border-b border-[#F6EFE7]/80 dark:border-[#3D3530]/60 text-xs">
+                  <span className="font-bold text-gray-400">3. 예약 인원</span>
+                  <span className="font-bold text-xs text-[#C98C63]">1명 (무료체험 기본 고정)</span>
+                </div>
+              )}
 
               {/* Step 4: Apply Coupons */}
-              {currentUser && userCoupons.length > 0 && (
+              {currentUser && selectedClass.price > 0 && userCoupons.length > 0 && (
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-400 flex items-center gap-1">
                     <Tag className="w-3.5 h-3.5 text-[#C98C63]" /> 4. 보유 쿠폰 적용
@@ -503,16 +528,16 @@ export default function ClassDetailModal({ classId, setView, setSelectedClassId 
               {/* Bill Details */}
               <div className="bg-[#FFFDF9] dark:bg-[#1F1B18] p-4 rounded-2xl border border-[#F6EFE7] dark:border-[#3D3530] space-y-2 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-gray-400">기본 단가 x {headCount}명</span>
+                  <span className="text-gray-400">기본 단가 x {selectedClass.price === 0 ? 1 : headCount}명</span>
                   <span className="font-semibold">{basePrice === 0 ? '무료' : `${basePrice.toLocaleString()}원`}</span>
                 </div>
-                {activeCoupon && (
+                {selectedClass.price > 0 && activeCoupon && (
                   <div className="flex justify-between text-[#A26745] dark:text-[#D7A17E]">
                     <span>쿠폰 할인 ({activeCoupon.name})</span>
                     <span>-{couponDiscountLabel}</span>
                   </div>
                 )}
-                {currentUser && (
+                {currentUser && finalPrice > 0 && (
                   <div className="flex justify-between text-emerald-500 font-medium">
                     <span>예약 시 적립 예정 포인트 (5%)</span>
                     <span>+{Math.floor(finalPrice * 0.05).toLocaleString()}p</span>
@@ -531,11 +556,13 @@ export default function ClassDetailModal({ classId, setView, setSelectedClassId 
                   disabled={bookingLoading}
                   className="w-full py-4 rounded-full bg-[#C98C63] hover:bg-[#A26745] disabled:bg-gray-400 text-white font-bold text-sm shadow-md cursor-pointer transition-colors"
                 >
-                  {bookingLoading ? '처리 중...' : '원데이 클래스 예약하기'}
+                  {bookingLoading ? '처리 중...' : (selectedClass.price === 0 ? '무료체험 신청하기' : '원데이 클래스 예약하기')}
                 </button>
               ) : isGuestBooking ? (
                 <div className="space-y-3 bg-[#F6EFE7]/30 dark:bg-[#3D3530]/20 p-4 rounded-2xl border border-[#E5D5C5]/45">
-                  <span className="text-xs font-bold text-[#A26745] dark:text-[#D7A17E] block">비회원 예약자 정보 입력</span>
+                  <span className="text-xs font-bold text-[#A26745] dark:text-[#D7A17E] block">
+                    {selectedClass.price === 0 ? '비회원 무료체험 신청자 정보 입력' : '비회원 예약자 정보 입력'}
+                  </span>
                   
                   <div className="space-y-1">
                     <label className="text-[10px] text-gray-400 block">예약자 성함</label>
@@ -577,7 +604,7 @@ export default function ClassDetailModal({ classId, setView, setSelectedClassId 
                     disabled={bookingLoading}
                     className="w-full py-3.5 mt-2 rounded-full bg-[#C98C63] hover:bg-[#A26745] disabled:bg-gray-400 text-white font-bold text-xs shadow-md cursor-pointer transition-colors"
                   >
-                    {bookingLoading ? '예약 처리 중...' : '비회원 체험 예약 완료하기'}
+                    {bookingLoading ? '예약 처리 중...' : (selectedClass.price === 0 ? '비회원 무료체험 신청 완료' : '비회원 체험 예약 완료하기')}
                   </button>
 
                   <button
@@ -593,13 +620,13 @@ export default function ClassDetailModal({ classId, setView, setSelectedClassId 
                     onClick={() => setView('login')}
                     className="w-full py-3.5 rounded-full bg-[#2E2A27] hover:opacity-90 text-white font-bold text-xs shadow-md cursor-pointer"
                   >
-                    로그인하고 예약하기
+                    {selectedClass.price === 0 ? '로그인하고 무료체험 신청하기' : '로그인하고 예약하기'}
                   </button>
                   <button
                     onClick={() => setIsGuestBooking(true)}
                     className="w-full py-3.5 rounded-full bg-[#FFFDF9] dark:bg-[#1F1B18] border border-[#C98C63] hover:bg-[#F6EFE7]/40 text-[#C98C63] font-bold text-xs shadow-xs cursor-pointer"
                   >
-                    비회원으로 무료 예약하기
+                    {selectedClass.price === 0 ? '비회원으로 무료체험 신청하기' : '비회원으로 무료 예약하기'}
                   </button>
                   <p className="text-[10px] text-gray-400 text-center">
                     * 신규 가입 후 예약 시 2,000p 및 오픈 100% 쿠폰이 즉시 지급됩니다!

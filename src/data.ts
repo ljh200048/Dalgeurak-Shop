@@ -230,7 +230,7 @@ export const INITIAL_CLASSES: WorkshopClass[] = [
     duration: '30분',
     maxPeople: 10,
     price: 0,
-    imageUrl: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&q=80&w=600',
+    imageUrl: 'https://images.unsplash.com/photo-1596464716127-f2a82984de30?auto=format&fit=crop&q=80&w=600',
     rating: 4.9,
     reviewCount: 8,
     intro: '달그락 상점이 자랑하는 소품 키트를 직접 만져보고 조립하여 완성해보는 초간단 미니 체험 클래스입니다. 아기자기하고 포근한 달그락 감성이 가득 담긴 시그니처 패키지 키트를 무상으로 선물받고 조작해보는 행복을 느껴보세요.',
@@ -239,6 +239,46 @@ export const INITIAL_CLASSES: WorkshopClass[] = [
     completedItem: '달그락 시그니처 DIY 소품 키트 완제품 1개',
     precautions: ['해당 체험은 1인당 일평생 1회에 한하여 무료 예약 및 수강이 지원됩니다.'],
     refundPolicy: '무료 체험이므로 취소 시 위약금 및 공제 금액은 전혀 없으나, 노쇼 예방과 원활한 진행을 위해 불참 시 최소 1일 전 취소 부탁드립니다.',
+    isFeatured: true
+  },
+  {
+    id: 'class-free-shop-event',
+    name: '[무료 체험] 달그락 상점 체험 이벤트',
+    description: '달그락 상점의 시그니처 감성과 아기자기한 수공예 문화를 무료로 직접 경험하고 체험해볼 수 있는 특별 오픈 이벤트',
+    categories: ['공방', '무료', '이벤트', '수공예'],
+    level: '입문',
+    duration: '45분',
+    maxPeople: 12,
+    price: 0,
+    imageUrl: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&q=80&w=600',
+    rating: 5.0,
+    reviewCount: 34,
+    intro: '달그락 상점이 추구하는 핸드메이드 라이프스타일을 듬뿍 누려보실 수 있는 특별 체험 이벤트입니다. 아늑한 아틀리에 분위기 속에서 향긋한 허브티를 즐기며 전문 작가의 친절한 라이브 시연을 관람하고, 직접 간단한 오너먼트 키트도 수공해 보실 수 있습니다. 누구나 부담 없이 오셔서 따스한 영감을 한가득 채워가세요.',
+    materials: ['달그락 일러스트 드로잉 카드 1세트', '천연 아로마 프래그런스 향료 3종 체험', '미니 우드 참 오너먼트 제작 세트'],
+    provided: ['웰컴 오가닉 플라워 블렌딩 티 1잔', '달그락 수제 크래프트 포장 봉투', '수공예 작가 소책자 가이드북'],
+    completedItem: '달그락 커스텀 감성 오너먼트 1개 + 수제 엽서 세트',
+    precautions: ['보다 쾌적한 체험 환경 유지를 위해 동시 참여 인원이 제한되므로, 예약 정시 10분 전까지 반드시 입실을 완료해 주시기 바랍니다.', '본 세션은 신규 고객들을 위한 무상 제공 세션이므로 중복 수강은 정중히 사양합니다.'],
+    refundPolicy: '100% 무료 체험 프로그램으로 수강 취소 위약금은 없습니다. 단, 한정 인원 예약제로 진행되어 부득이한 불참 시 최소 1일 전까지 마이페이지에서 예약 취소 부탁드립니다.',
+    isFeatured: true
+  },
+  {
+    id: 'class-workshop-signature',
+    name: '달그락 시그니처 공방 체험 클래스',
+    description: '달그락 상점의 프리미엄 소품들을 직접 만들고 소통하는 대표 수공예 원데이 클래스',
+    categories: ['원데이', '수공예', '소품', '시그니처'],
+    level: '초급',
+    duration: '2시간',
+    maxPeople: 6,
+    price: 32000,
+    imageUrl: 'https://images.unsplash.com/photo-1452860606245-08befc0ff44b?auto=format&fit=crop&q=80&w=600',
+    rating: 5.0,
+    reviewCount: 124,
+    intro: '달그락 상점의 시그니처 감성을 함축한 원데이 공방 체험 클래스입니다. 아기자기한 이니셜 각인 가죽 소품, 향기로운 원목 왁스 타블렛, 그리고 감성 가득한 디자인 컵받침까지, 달그락 상점의 인기 소품들을 전문 작가의 친절한 가이드와 함께 즐겁게 제작할 수 있습니다. 지친 일상에서 벗어나 따뜻하고 아늑한 달그락 공방에서 손끝으로 만드는 나만의 소소한 행복을 가득 완성해보세요.',
+    materials: ['천연 이탈리아 소가죽 원단', '아로마 천연 향료 및 왁스 원료', '원목 코스터 프레임 및 세라믹 글래스 펜 세트', '이니셜 각인 전용 폰트 불박 금형 세트'],
+    provided: ['시그니처 웰컴 드립 커피 & 홈메이드 쿠키', '달그락 오가닉 에코 린넨 패키지 백', '폴라로이드 즉석 추억 사진 1매 촬영'],
+    completedItem: '각인 가죽 키링 1개 + 아로마 플라워 왁스 타블렛 1개 + 레트로 커스텀 컵받침 1개',
+    precautions: ['일부 고온 도구(불박 각인기 등) 사용 시 안전을 위해 반드시 작가의 안내에 따라 조작해주셔야 합니다.', '개인 각인에 새길 문구(영문 대문자, 숫자, 이니셜)를 미리 구상해오시면 클래스가 더욱 매끄럽게 진행됩니다.'],
+    refundPolicy: '체험일 3일 전 100% 환불, 2일 전 50% 환불, 1일 전 및 당일 취소는 원활한 클래스 운영 및 사전 재료 소분 준비를 위해 환불 및 양도가 불가합니다.',
     isFeatured: true
   }
 ];
@@ -320,6 +360,17 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     stock: 150,
     wishlistCount: 412,
     isFeatured: false
+  },
+  {
+    id: 'prod-free-kit',
+    name: '달그락 키트 체험 클래스 상품',
+    price: 0,
+    imageUrl: 'https://images.unsplash.com/photo-1607344645866-009c320c5ab8?auto=format&fit=crop&q=80&w=600',
+    description: '달그락 키트 무료체험 클래스에서 사용하는 DIY 시그니처 소품 가공 체험 패키지 키트 상품',
+    category: '키링',
+    stock: 999,
+    wishlistCount: 520,
+    isFeatured: true
   }
 ];
 

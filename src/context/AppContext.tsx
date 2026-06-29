@@ -179,10 +179,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             loadedClasses = INITIAL_CLASSES;
           } else {
             loadedClasses = classesSnapshot.docs.map(doc => doc.data() as WorkshopClass);
-            if (!loadedClasses.some(c => c.id === 'class-free-kit')) {
-              const freeKitClass = INITIAL_CLASSES.find(c => c.id === 'class-free-kit')!;
-              await setDoc(doc(classesCol, freeKitClass.id), freeKitClass);
-              loadedClasses = [...loadedClasses, freeKitClass];
+            
+            // Sync all INITIAL_CLASSES to Firestore
+            for (const initialClass of INITIAL_CLASSES) {
+              const existingIdx = loadedClasses.findIndex(c => c.id === initialClass.id);
+              if (existingIdx === -1) {
+                await setDoc(doc(classesCol, initialClass.id), initialClass);
+                loadedClasses.push(initialClass);
+              } else {
+                const existing = loadedClasses[existingIdx];
+                if (existing.imageUrl.includes('photo-1513519245088') || existing.imageUrl !== initialClass.imageUrl) {
+                  await setDoc(doc(classesCol, initialClass.id), initialClass);
+                  loadedClasses[existingIdx] = initialClass;
+                }
+              }
             }
           }
 
@@ -196,6 +206,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             loadedProducts = INITIAL_PRODUCTS;
           } else {
             loadedProducts = productsSnapshot.docs.map(doc => doc.data() as ProductItem);
+            
+            // Sync all INITIAL_PRODUCTS to Firestore
+            for (const initialProduct of INITIAL_PRODUCTS) {
+              const existingIdx = loadedProducts.findIndex(p => p.id === initialProduct.id);
+              if (existingIdx === -1) {
+                await setDoc(doc(productsCol, initialProduct.id), initialProduct);
+                loadedProducts.push(initialProduct);
+              } else {
+                const existing = loadedProducts[existingIdx];
+                if (existing.imageUrl.includes('photo-1513519245088') || existing.imageUrl !== initialProduct.imageUrl) {
+                  await setDoc(doc(productsCol, initialProduct.id), initialProduct);
+                  loadedProducts[existingIdx] = initialProduct;
+                }
+              }
+            }
           }
 
           // Notices
@@ -268,11 +293,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           console.warn("Firestore seeding/loading failed or offline, falling back to LocalStorage:", fsError);
           // Load from LocalStorage or fallback to seed
           loadedClasses = getStorage<WorkshopClass[]>('classes', INITIAL_CLASSES);
-          if (!loadedClasses.some(c => c.id === 'class-free-kit')) {
-            const freeKitClass = INITIAL_CLASSES.find(c => c.id === 'class-free-kit')!;
-            loadedClasses = [...loadedClasses, freeKitClass];
+          for (const initialClass of INITIAL_CLASSES) {
+            const existingIdx = loadedClasses.findIndex(c => c.id === initialClass.id);
+            if (existingIdx === -1) {
+              loadedClasses.push(initialClass);
+            } else {
+              const existing = loadedClasses[existingIdx];
+              if (existing.imageUrl.includes('photo-1513519245088') || existing.imageUrl !== initialClass.imageUrl) {
+                loadedClasses[existingIdx] = initialClass;
+              }
+            }
           }
+
           loadedProducts = getStorage<ProductItem[]>('products', INITIAL_PRODUCTS);
+          for (const initialProduct of INITIAL_PRODUCTS) {
+            const existingIdx = loadedProducts.findIndex(p => p.id === initialProduct.id);
+            if (existingIdx === -1) {
+              loadedProducts.push(initialProduct);
+            } else {
+              const existing = loadedProducts[existingIdx];
+              if (existing.imageUrl.includes('photo-1513519245088') || existing.imageUrl !== initialProduct.imageUrl) {
+                loadedProducts[existingIdx] = initialProduct;
+              }
+            }
+          }
           loadedNotices = getStorage<Notice[]>('notices', INITIAL_NOTICES);
           loadedGallery = getStorage<GalleryItem[]>('gallery', INITIAL_GALLERY);
           loadedReviews = getStorage<Review[]>('reviews', INITIAL_REVIEWS);

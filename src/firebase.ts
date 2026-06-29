@@ -3,12 +3,13 @@ import { initializeAuth, browserLocalPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBixc-qwtayr86ozUjVwnN_dGgTM4VIEdg",
-  authDomain: "cheongchunfilm-mobile.firebaseapp.com",
-  projectId: "cheongchunfilm-mobile",
-  storageBucket: "cheongchunfilm-mobile.firebasestorage.app",
-  messagingSenderId: "1095212470598",
-  appId: "1:1095212470598:web:8fefe44ad11f9da1d1d547"
+  apiKey: "AIzaSyA3nBhomUYT3_LEG4rRY9xLrKEoS1MUsdE",
+  authDomain: "dallgrak-c0d82.firebaseapp.com",
+  projectId: "dallgrak-c0d82",
+  storageBucket: "dallgrak-c0d82.firebasestorage.app",
+  messagingSenderId: "807808513797",
+  appId: "1:807808513797:web:ba45e59e2fe41a3497e96c",
+  measurementId: "G-5DFG78S29N"
 };
 
 // Initialize Firebase
@@ -19,5 +20,5 @@ export const auth = initializeAuth(app, {
   persistence: browserLocalPersistence
 });
 
-// Initialize Firestore with specific database ID if available
-export const db = getFirestore(app, "ai-studio-2934e608-f2ef-4b72-adbd-988d5a00c3fb");
+// Initialize Firestore (uses default database)
+export const db = getFirestore(app);

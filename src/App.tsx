@@ -27,6 +27,8 @@ function AppContent() {
         return <HomeView setView={setView} setSelectedClassId={setSelectedClassId} />;
       case 'classes':
         return <ClassesView setView={setView} setSelectedClassId={setSelectedClassId} />;
+      case 'freetrials':
+        return <ClassesView setView={setView} setSelectedClassId={setSelectedClassId} initialFilterFree={true} />;
       case 'goods':
       case 'cart':
         return <GoodsShopView setView={setView} />;

@@ -18,6 +18,7 @@ export default function LoginView({ setView, initialMode = 'login' }: LoginViewP
   const [role, setRole] = useState<'user' | 'admin'>('user');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [showAdminSelector, setShowAdminSelector] = useState(false);
 
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,22 +53,82 @@ export default function LoginView({ setView, initialMode = 'login' }: LoginViewP
   };
 
   const handleQuickLogin = async (type: 'admin' | 'user') => {
+    if (type === 'admin') {
+      setShowAdminSelector(true);
+      return;
+    }
+
     setLoading(true);
     setErrorMsg('');
-    const targetEmail = type === 'admin' ? 'admin@dalgeurak.com' : 'user@example.com';
-    const targetPass = type === 'admin' ? 'admin123' : 'user123';
+    const targetEmail = 'user@example.com';
+    const targetPass = 'user123';
+
+    // Prefill form states
+    setEmail(targetEmail);
+    setPassword(targetPass);
+    setIsLogin(true);
+    setRole('user');
 
     try {
-      // Try to login directly, if user does not exist, auto signup!
       try {
         await loginWithEmail(targetEmail, targetPass);
-      } catch {
-        await signupWithEmail(targetEmail, targetPass, type === 'admin' ? '점장님' : '홍길동', type === 'admin' ? 'admin' : 'user');
+        alert('일반수강생 모드로 간편 연동 및 로그인되었습니다!');
+        setView('home');
+      } catch (loginErr: any) {
+        // Try signup if login failed
+        try {
+          await signupWithEmail(targetEmail, targetPass, '홍길동', 'user');
+          alert('일반수강생 모드로 간편 연동 및 로그인되었습니다!');
+          setView('home');
+        } catch (signupErr: any) {
+          // If signup fails because email already exists with different password
+          setEmail(targetEmail);
+          setPassword('');
+          setIsLogin(true);
+          setRole('user');
+          alert(`해당 수강생 계정(${targetEmail})은 이미 다른 비밀번호로 등록되어 있습니다.\n\n로그인 폼에 이메일을 입력해 드렸으니 설정하신 비밀번호를 입력해 주세요!`);
+        }
       }
-      alert(`${type === 'admin' ? '관리자 대시보드' : '수강생 모드'}로 빠른 로그인 성공!`);
-      setView('home');
     } catch (err: any) {
-      setErrorMsg('빠른 로그인 생성 실패: ' + err.message);
+      setErrorMsg('수강생 간편연동 실패: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAdminQuickLogin = async (selectedEmail: string) => {
+    setLoading(true);
+    setErrorMsg('');
+    setShowAdminSelector(false);
+
+    // Prefill form states
+    setEmail(selectedEmail);
+    setPassword('admin123');
+    setIsLogin(true);
+    setRole('admin');
+
+    try {
+      try {
+        await loginWithEmail(selectedEmail, 'admin123');
+        alert(`점장님(${selectedEmail}) 간편 연동 및 로그인되었습니다!`);
+        setView('home');
+      } catch (loginErr: any) {
+        // Try signup if login failed
+        try {
+          await signupWithEmail(selectedEmail, 'admin123', '점장님', 'admin');
+          alert(`점장님(${selectedEmail}) 간편 연동 및 로그인되었습니다!`);
+          setView('home');
+        } catch (signupErr: any) {
+          // If signup fails because email already exists with different password
+          setEmail(selectedEmail);
+          setPassword('');
+          setIsLogin(true);
+          setRole('admin');
+          alert(`점장님 계정(${selectedEmail})은 이미 개별 설정하신 비밀번호로 등록되어 있습니다.\n\n로그인 폼에 이메일을 입력해 드렸으니, 가입 시 설정하신 비밀번호를 입력해 로그인해 주세요!`);
+        }
+      }
+    } catch (err: any) {
+      setErrorMsg('공방 점장님 간편연동 실패: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -207,22 +268,55 @@ export default function LoginView({ setView, initialMode = 'login' }: LoginViewP
           <span className="text-[10px] font-bold text-gray-400 block text-center uppercase tracking-wider">
             ⚡ 빠른 테스트 계정 연동 (1클릭)
           </span>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => handleQuickLogin('user')}
-              disabled={loading}
-              className="py-2.5 rounded-xl border border-[#C98C63]/30 text-[#C98C63] text-[11px] font-semibold hover:bg-[#F6EFE7]/30 cursor-pointer"
-            >
-              일반수강생 간편연동
-            </button>
-            <button
-              onClick={() => handleQuickLogin('admin')}
-              disabled={loading}
-              className="py-2.5 rounded-xl bg-[#2E2A27] text-white text-[11px] font-semibold hover:opacity-90 cursor-pointer"
-            >
-              공방 점장님 간편연동
-            </button>
-          </div>
+
+          {showAdminSelector ? (
+            <div className="bg-amber-50/50 dark:bg-[#322923] p-3 rounded-2xl border border-amber-100 dark:border-amber-950/40 space-y-2">
+              <span className="text-[10px] font-bold text-[#C98C63] block text-center uppercase tracking-wider">
+                관리자 계정 선택
+              </span>
+              <div className="space-y-1.5">
+                <button
+                  onClick={() => handleAdminQuickLogin('lch200048@gmail.com')}
+                  disabled={loading}
+                  className="w-full py-2 px-3 rounded-xl border border-[#C98C63]/40 bg-white dark:bg-[#1F1B18] hover:bg-[#F6EFE7]/50 text-[11px] font-semibold text-gray-700 dark:text-gray-200 flex justify-between items-center cursor-pointer transition-colors"
+                >
+                  <span>lch200048@gmail.com</span>
+                  <span className="text-[9px] bg-[#C98C63] text-white px-2 py-0.5 rounded-md font-bold">점장 전용</span>
+                </button>
+                <button
+                  onClick={() => handleAdminQuickLogin('admin@dalgeurak.com')}
+                  disabled={loading}
+                  className="w-full py-2 px-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-[#1F1B18] hover:bg-gray-50 dark:hover:bg-zinc-850 text-[11px] font-semibold text-gray-700 dark:text-gray-200 flex justify-between items-center cursor-pointer transition-colors"
+                >
+                  <span>admin@dalgeurak.com</span>
+                  <span className="text-[9px] bg-gray-500 text-white px-2 py-0.5 rounded-md font-bold">기본 관리자</span>
+                </button>
+                <button
+                  onClick={() => setShowAdminSelector(false)}
+                  className="w-full text-center text-[10px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:underline py-1"
+                >
+                  돌아가기
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => handleQuickLogin('user')}
+                disabled={loading}
+                className="py-2.5 rounded-xl border border-[#C98C63]/30 text-[#C98C63] text-[11px] font-semibold hover:bg-[#F6EFE7]/30 cursor-pointer"
+              >
+                일반수강생 간편연동
+              </button>
+              <button
+                onClick={() => handleQuickLogin('admin')}
+                disabled={loading}
+                className="py-2.5 rounded-xl bg-[#2E2A27] text-white text-[11px] font-semibold hover:opacity-90 cursor-pointer"
+              >
+                공방 점장님 간편연동
+              </button>
+            </div>
+          )}
         </div>
 
       </div>
