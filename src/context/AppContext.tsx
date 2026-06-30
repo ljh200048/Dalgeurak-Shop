@@ -212,8 +212,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               const existingIdx = loadedClasses.findIndex(c => c.id === initialClass.id);
               if (existingIdx === -1) {
                 loadedClasses.push(initialClass);
-              } else {
-                loadedClasses[existingIdx] = initialClass;
               }
             }
           }
@@ -236,8 +234,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               const existingIdx = loadedProducts.findIndex(p => p.id === initialProduct.id);
               if (existingIdx === -1) {
                 loadedProducts.push(initialProduct);
-              } else {
-                loadedProducts[existingIdx] = initialProduct;
               }
             }
           }
@@ -330,7 +326,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               loadedClasses.push(initialClass);
             } else {
               const existing = loadedClasses[existingIdx];
-              if (existing.imageUrl.includes('photo-1513519245088') || existing.imageUrl !== initialClass.imageUrl) {
+              if (existing.imageUrl.includes('photo-1513519245088')) {
                 loadedClasses[existingIdx] = initialClass;
               }
             }
@@ -343,7 +339,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               loadedProducts.push(initialProduct);
             } else {
               const existing = loadedProducts[existingIdx];
-              if (existing.imageUrl.includes('photo-1513519245088') || existing.imageUrl !== initialProduct.imageUrl) {
+              if (existing.imageUrl.includes('photo-1513519245088')) {
                 loadedProducts[existingIdx] = initialProduct;
               }
             }
