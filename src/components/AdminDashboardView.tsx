@@ -92,6 +92,8 @@ export default function AdminDashboardView() {
   const [productImageUrl, setProductImageUrl] = useState('https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&q=80&w=600');
   const [productStock, setProductStock] = useState(10);
   const [productIsFeatured, setProductIsFeatured] = useState(false);
+  const [isProductDragOver, setIsProductDragOver] = useState(false);
+  const productImageFileInputRef = React.useRef<HTMLInputElement>(null);
 
   const processImageFile = (file: File) => {
     if (!file || !file.type.startsWith('image/')) return;
@@ -124,6 +126,34 @@ export default function AdminDashboardView() {
     setIsDragOver(false);
     const file = e.dataTransfer.files?.[0];
     if (file) processImageFile(file);
+  };
+
+  const processProductImageFile = (file: File) => {
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX = 900;
+        let { width, height } = img;
+        if (width > MAX) { height = Math.round((height * MAX) / width); width = MAX; }
+        if (height > MAX) { width = Math.round((width * MAX) / height); height = MAX; }
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+        setProductImageUrl(canvas.toDataURL('image/jpeg', 0.82));
+      };
+      img.src = ev.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleProductImageDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsProductDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) processProductImageFile(file);
   };
 
   // New Notice state
@@ -888,29 +918,60 @@ export default function AdminDashboardView() {
                   </div>
                 </div>
 
-                <div className="space-y-1 text-xs">
-                  <label className="font-bold text-gray-400">굿즈 대표 이미지 URL</label>
-                  <div className="flex gap-2">
-                    <input 
-                      type="text" 
-                      required
-                      placeholder="이미지 주소를 입력하세요 (예: https://images.unsplash.com/...)" 
-                      value={productImageUrl}
-                      onChange={(e) => setProductImageUrl(e.target.value)}
-                      className="flex-1 p-2 border rounded-lg bg-[#FFFDF9] dark:bg-[#1F1B18]"
+                <div className="space-y-2 text-xs">
+                  <label className="font-bold text-gray-400 block">굿즈 대표 이미지</label>
+
+                  {/* Drag & Drop Zone */}
+                  <div
+                    onDragOver={(e) => { e.preventDefault(); setIsProductDragOver(true); }}
+                    onDragEnter={(e) => { e.preventDefault(); setIsProductDragOver(true); }}
+                    onDragLeave={() => setIsProductDragOver(false)}
+                    onDrop={handleProductImageDrop}
+                    onClick={() => productImageFileInputRef.current?.click()}
+                    className={`flex flex-col items-center justify-center gap-2 w-full py-5 border-2 border-dashed rounded-xl cursor-pointer transition-all select-none
+                      ${isProductDragOver
+                        ? 'border-[#C98C63] bg-[#C98C63]/10 scale-[1.01]'
+                        : 'border-[#C98C63]/40 bg-[#FFFDF9] dark:bg-[#1F1B18] hover:border-[#C98C63] hover:bg-[#C98C63]/5'
+                      }`}
+                  >
+                    <input
+                      ref={productImageFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) processProductImageFile(f); }}
                     />
-                    {productImageUrl && (
-                      <img 
-                        src={productImageUrl} 
-                        alt="미리보기" 
-                        className="w-10 h-10 rounded-lg object-cover border border-gray-200"
+                    <Upload className={`w-5 h-5 transition-colors ${isProductDragOver ? 'text-[#C98C63]' : 'text-[#C98C63]/60'}`} />
+                    <p className="text-[11px] font-bold text-[#C98C63]">
+                      {isProductDragOver ? '여기에 놓으세요!' : '이미지를 드래그하거나 클릭해서 선택'}
+                    </p>
+                    <p className="text-[10px] text-gray-400">JPG, PNG, WEBP 등 이미지 파일</p>
+                  </div>
+
+                  {/* URL 직접 입력 */}
+                  <input
+                    type="text"
+                    placeholder="또는 이미지 URL 직접 입력 (https://...)"
+                    value={productImageUrl}
+                    onChange={(e) => setProductImageUrl(e.target.value)}
+                    className="w-full p-2 border rounded-lg bg-[#FFFDF9] dark:bg-[#1F1B18] font-mono text-[11px]"
+                  />
+
+                  {/* Preview */}
+                  {productImageUrl && (
+                    <div className="relative w-full h-32 rounded-xl overflow-hidden border border-[#E5D5C5] dark:border-[#52473E]">
+                      <img
+                        src={productImageUrl}
+                        alt="미리보기"
+                        className="w-full h-full object-cover"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&q=80&w=600';
                         }}
                         referrerPolicy="no-referrer"
                       />
-                    )}
-                  </div>
+                      <span className="absolute bottom-2 right-2 px-2 py-0.5 bg-black/50 text-white text-[9px] rounded-full">미리보기</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2 text-xs">
