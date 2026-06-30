@@ -121,7 +121,7 @@ export default function FAQView() {
             💬 카카오톡 1:1 오픈채팅 문의
           </a>
           <a
-            href="https://www.instagram.com/cozy_clink_114?igsh=MWVucW1jcGFwa2J2bQ=="
+            href="https://www.instagram.com/cozy_clink_114?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F56040] text-white text-xs font-bold hover:opacity-95 transition-all shadow-3xs cursor-pointer"

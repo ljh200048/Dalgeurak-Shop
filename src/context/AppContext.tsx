@@ -134,7 +134,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     chatId: '',
     isEnabled: false
   });
-  
+
   const [autoApproveBookings, setAutoApproveBookingsState] = useState<boolean>(() => {
     try {
       const item = localStorage.getItem('dalgeurak_auto_approve_bookings');
@@ -152,6 +152,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       console.warn("Saving auto_approve_bookings to localStorage failed:", e);
     }
   };
+
+  const telegramConfigRef = React.useRef(telegramConfig);
+  useEffect(() => { telegramConfigRef.current = telegramConfig; }, [telegramConfig]);
 
   // Local storage backup keys
   const STORAGE_PREFIX = 'dalgeurak_';
@@ -669,26 +672,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const sendTelegramNotification = async (booking: Booking) => {
-    const config = telegramConfig;
+    const config = telegramConfigRef.current;
     if (!config.isEnabled || !config.botToken || !config.chatId) {
       return;
     }
-    
-    const message = `🔔 *[달그락 공방 - 새로운 예약 알림]*\n\n` +
+
+    const isFreeTrial = booking.totalPrice === 0;
+    const header = isFreeTrial
+      ? `🎁 *[달그락 공방 - 무료 체험 신청]*`
+      : `🔔 *[달그락 공방 - 새로운 예약 알림]*`;
+
+    const message =
+      `${header}\n\n` +
       `• *클래스명*: ${booking.className}\n` +
       `• *예약자명*: ${booking.userName}\n` +
       `• *연락처*: ${booking.guestPhone || '미기재'}\n` +
       `• *예약일시*: ${booking.date} (${booking.time})\n` +
       `• *예약인원*: ${booking.headCount}명\n` +
-      `• *결제금액*: ${booking.totalPrice === 0 ? '무료 체험' : booking.totalPrice.toLocaleString() + '원'}\n` +
-      `• *예약번호*: ${booking.id}`;
-      
+      `• *결제금액*: ${isFreeTrial ? '✅ 100% 무료 체험' : booking.totalPrice.toLocaleString() + '원'}\n` +
+      `• *예약번호*: \`${booking.id}\``;
+
     try {
       await fetch(`https://api.telegram.org/bot${config.botToken}/sendMessage`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: config.chatId,
           text: message,

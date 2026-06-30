@@ -19,8 +19,13 @@ export default function ClassesView({ setView, setSelectedClassId, initialFilter
   const [selectedCategory, setSelectedCategory] = useState<string>(initialFilterFree ? '무료' : '전체');
   const [selectedLevel, setSelectedLevel] = useState<string>('전체');
 
+  // When filtering free trials, also reset other filters
   useEffect(() => {
-    setSelectedCategory(initialFilterFree ? '무료' : '전체');
+    if (initialFilterFree) {
+      setSearchTerm('');
+      setSelectedCategory('전체');
+      setSelectedLevel('전체');
+    }
   }, [initialFilterFree]);
 
   // Direct Guest Free Kit Booking Modal States
@@ -134,6 +139,12 @@ export default function ClassesView({ setView, setSelectedClassId, initialFilter
   }, [classes]);
 
   const filteredClasses = useMemo(() => {
+    // For free trials, just show all classes with price === 0
+    if (initialFilterFree) {
+      return classes.filter(c => c.price === 0);
+    }
+    
+    // For regular classes, apply all filters
     return classes.filter(c => {
       const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                             c.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -142,7 +153,7 @@ export default function ClassesView({ setView, setSelectedClassId, initialFilter
       const matchesLevel = selectedLevel === '전체' || c.level === selectedLevel;
       return matchesSearch && matchesCategory && matchesLevel;
     });
-  }, [classes, searchTerm, selectedCategory, selectedLevel]);
+  }, [classes, searchTerm, selectedCategory, selectedLevel, initialFilterFree]);
 
   const handleClassClick = (id: string) => {
     setSelectedClassId(id);
@@ -281,6 +292,12 @@ export default function ClassesView({ setView, setSelectedClassId, initialFilter
             ))}
           </div>
         </div>
+
+        {/* Debug Info - Remove after testing */}
+        <div className="text-xs text-gray-500 bg-yellow-50 dark:bg-yellow-950 p-2 rounded">
+          {`Debug: initialFilterFree=${initialFilterFree}, classes=${classes.length}, filtered=${filteredClasses.length}, freeClasses=${classes.filter(c => c.price === 0).length}`}
+        </div>
+
 
         {/* Active Filters Summary */}
         {(searchTerm || selectedCategory !== '전체' || selectedLevel !== '전체') && (

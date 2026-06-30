@@ -1,23 +1,25 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { WorkshopClass, Booking, Notice, Review, ProductItem } from '../types';
-import { 
-  TrendingUp, 
-  Users, 
-  Calendar, 
-  DollarSign, 
-  Plus, 
-  Edit3, 
-  Trash2, 
-  Check, 
-  X, 
-  FileText, 
-  Sparkles, 
+import {
+  TrendingUp,
+  Users,
+  Calendar,
+  DollarSign,
+  Plus,
+  Edit3,
+  Trash2,
+  Check,
+  X,
+  FileText,
+  Sparkles,
   AlertCircle,
   Clock,
   Send,
   RefreshCw,
-  Download
+  Download,
+  Upload,
+  Link
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -76,6 +78,9 @@ export default function AdminDashboardView() {
   const [classMaxPeople, setClassMaxPeople] = useState(6);
   const [classImageUrl, setClassImageUrl] = useState('https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&q=80&w=600');
   const [classIsFreeTrial, setClassIsFreeTrial] = useState(false);
+  const [imageInputMode, setImageInputMode] = useState<'file' | 'url'>('file');
+  const [isDragOver, setIsDragOver] = useState(false);
+  const imageFileInputRef = React.useRef<HTMLInputElement>(null);
 
   // New Product states
   const [productFormOpen, setProductFormOpen] = useState(false);
@@ -87,6 +92,39 @@ export default function AdminDashboardView() {
   const [productImageUrl, setProductImageUrl] = useState('https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&q=80&w=600');
   const [productStock, setProductStock] = useState(10);
   const [productIsFeatured, setProductIsFeatured] = useState(false);
+
+  const processImageFile = (file: File) => {
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX = 900;
+        let { width, height } = img;
+        if (width > MAX) { height = Math.round((height * MAX) / width); width = MAX; }
+        if (height > MAX) { width = Math.round((width * MAX) / height); height = MAX; }
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+        setClassImageUrl(canvas.toDataURL('image/jpeg', 0.82));
+      };
+      img.src = ev.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processImageFile(file);
+  };
+
+  const handleImageDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) processImageFile(file);
+  };
 
   // New Notice state
   const [noticeTitle, setNoticeTitle] = useState('');
@@ -186,6 +224,7 @@ export default function AdminDashboardView() {
     setClassMaxPeople(cls.maxPeople);
     setClassImageUrl(cls.imageUrl);
     setClassIsFreeTrial(cls.isFreeTrial || false);
+    setImageInputMode(cls.imageUrl.startsWith('data:') ? 'file' : 'url');
     setClassFormOpen(true);
   };
 
@@ -623,13 +662,93 @@ export default function AdminDashboardView() {
 
                 <div className="space-y-1 text-xs">
                   <label className="font-bold text-gray-400">클래스 상세 소개</label>
-                  <textarea 
+                  <textarea
                     rows={3}
                     placeholder="수강생들에게 보여줄 자세한 작품 가공과정과 공방 매력을 기입해주세요..."
                     value={classDesc}
                     onChange={(e) => setClassDesc(e.target.value)}
                     className="w-full p-2 border rounded-lg bg-[#FFFDF9] dark:bg-[#1F1B18]"
                   />
+                </div>
+
+                {/* Image Upload Section */}
+                <div className="space-y-2 text-xs">
+                  <label className="font-bold text-gray-400 block">클래스 대표 이미지</label>
+
+                  {/* Toggle: file vs URL */}
+                  <div className="flex gap-1.5 bg-gray-100 dark:bg-[#1F1B18] p-1 rounded-lg w-fit">
+                    <button
+                      type="button"
+                      onClick={() => setImageInputMode('file')}
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+                        imageInputMode === 'file'
+                          ? 'bg-white dark:bg-[#2E2A27] text-[#C98C63] shadow-xs'
+                          : 'text-gray-400 hover:text-gray-600'
+                      }`}
+                    >
+                      <Upload className="w-3 h-3" /> 파일 업로드
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setImageInputMode('url')}
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+                        imageInputMode === 'url'
+                          ? 'bg-white dark:bg-[#2E2A27] text-[#C98C63] shadow-xs'
+                          : 'text-gray-400 hover:text-gray-600'
+                      }`}
+                    >
+                      <Link className="w-3 h-3" /> URL 직접 입력
+                    </button>
+                  </div>
+
+                  {imageInputMode === 'file' ? (
+                    <div
+                      onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                      onDragEnter={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                      onDragLeave={() => setIsDragOver(false)}
+                      onDrop={handleImageDrop}
+                      onClick={() => imageFileInputRef.current?.click()}
+                      className={`flex flex-col items-center justify-center gap-2 w-full py-6 border-2 border-dashed rounded-xl cursor-pointer transition-all select-none
+                        ${isDragOver
+                          ? 'border-[#C98C63] bg-[#C98C63]/10 scale-[1.01]'
+                          : 'border-[#C98C63]/40 bg-[#FFFDF9] dark:bg-[#1F1B18] hover:border-[#C98C63] hover:bg-[#C98C63]/5'
+                        }`}
+                    >
+                      <input
+                        ref={imageFileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageFileChange}
+                        className="hidden"
+                      />
+                      <Upload className={`w-6 h-6 transition-colors ${isDragOver ? 'text-[#C98C63]' : 'text-[#C98C63]/60'}`} />
+                      <p className="text-[11px] font-bold text-[#C98C63]">
+                        {isDragOver ? '여기에 놓으세요!' : '이미지를 드래그하거나 클릭해서 선택'}
+                      </p>
+                      <p className="text-[10px] text-gray-400">JPG, PNG, WEBP 등 이미지 파일</p>
+                    </div>
+                  ) : (
+                    <input
+                      type="text"
+                      placeholder="https://images.unsplash.com/..."
+                      value={classImageUrl}
+                      onChange={(e) => setClassImageUrl(e.target.value)}
+                      className="w-full p-2 border rounded-lg bg-[#FFFDF9] dark:bg-[#1F1B18] font-mono text-[11px]"
+                    />
+                  )}
+
+                  {/* Preview */}
+                  {classImageUrl && (
+                    <div className="relative w-full h-36 rounded-xl overflow-hidden border border-[#E5D5C5] dark:border-[#52473E]">
+                      <img
+                        src={classImageUrl}
+                        alt="미리보기"
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                      <span className="absolute bottom-2 right-2 px-2 py-0.5 bg-black/50 text-white text-[9px] rounded-full">미리보기</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex gap-2">
