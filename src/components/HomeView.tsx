@@ -13,6 +13,7 @@ export default function HomeView({ setView, setSelectedClassId }: HomeViewProps)
 
   const freeTrialClasses = classes.filter(c => c.isFreeTrial);
   const featuredClasses = classes.filter(c => !c.isFreeTrial && c.isFeatured).slice(0, 4);
+  const heroImage = featuredClasses[0]?.imageUrl || "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&q=80&w=1600";
 
   const handleClassClick = (id: string) => {
     setSelectedClassId(id);
@@ -30,7 +31,7 @@ export default function HomeView({ setView, setSelectedClassId }: HomeViewProps)
         <div 
           className="absolute inset-0 bg-cover bg-center transition-transform duration-10000 hover:scale-105"
           style={{ 
-            backgroundImage: 'url("https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&q=80&w=1600")',
+            backgroundImage: `url("${heroImage}")`,
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent dark:from-black/80 dark:via-black/60 dark:to-transparent" />

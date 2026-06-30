@@ -77,6 +77,7 @@ export default function AdminDashboardView() {
   const [classMaxPeople, setClassMaxPeople] = useState(6);
   const [classImageUrl, setClassImageUrl] = useState('https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&q=80&w=600');
   const [classIsFreeTrial, setClassIsFreeTrial] = useState(false);
+  const [classIsFeatured, setClassIsFeatured] = useState(false);
 
   // New Product states
   const [productFormOpen, setProductFormOpen] = useState(false);
@@ -141,12 +142,13 @@ export default function AdminDashboardView() {
       maxPeople: classMaxPeople,
       price: classIsFreeTrial ? 0 : classPrice,
       isFreeTrial: classIsFreeTrial,
+      isFeatured: classIsFeatured,
       imageUrl: classImageUrl,
       intro: classDesc,
-      materials: ['기본 공방 자재 세트'],
-      provided: ['음료 서비스'],
-      completedItem: '나만의 오리지널 완성작 1종',
-      precautions: ['공구 오사용에 의한 상해에 주의하세요.'],
+      materials: editingClass?.materials || ['기본 공방 자재 세트'],
+      provided: editingClass?.provided || ['음료 서비스'],
+      completedItem: editingClass?.completedItem || '나만의 오리지널 완성작 1종',
+      precautions: editingClass?.precautions || ['공구 오사용에 의한 상해에 주의하세요.'],
       refundPolicy: classIsFreeTrial ? '무료 체험 프로그램으로 취소 위약금이 없습니다.' : '체험 3일 전 100% 환불'
     };
 
@@ -175,6 +177,7 @@ export default function AdminDashboardView() {
     setClassDuration('1시간 30분');
     setClassMaxPeople(6);
     setClassIsFreeTrial(false);
+    setClassIsFeatured(false);
   };
 
   const handleEditClassClick = (cls: WorkshopClass) => {
@@ -187,6 +190,7 @@ export default function AdminDashboardView() {
     setClassMaxPeople(cls.maxPeople);
     setClassImageUrl(cls.imageUrl);
     setClassIsFreeTrial(cls.isFreeTrial || false);
+    setClassIsFeatured(cls.isFeatured || false);
     setClassFormOpen(true);
   };
 
@@ -612,6 +616,17 @@ export default function AdminDashboardView() {
                   />
                 </div>
 
+                <div className="flex items-center gap-2 text-xs pt-1">
+                  <input 
+                    type="checkbox" 
+                    id="classIsFeatured"
+                    checked={classIsFeatured}
+                    onChange={(e) => setClassIsFeatured(e.target.checked)}
+                    className="rounded text-[#C98C63] focus:ring-[#C98C63] cursor-pointer"
+                  />
+                  <label htmlFor="classIsFeatured" className="font-bold text-gray-600 dark:text-gray-300 cursor-pointer">이 원데이 클래스를 추천 클래스로 등록하기 (홈페이지 노출)</label>
+                </div>
+
                 <div className="flex gap-2">
                   <button type="submit" className="px-5 py-2 rounded-full bg-[#C98C63] text-white text-xs font-bold cursor-pointer">
                     {editingClass ? '변경사항 반영' : '상점 신규 출시하기'}
@@ -635,7 +650,7 @@ export default function AdminDashboardView() {
                     <img src={c.imageUrl} alt="" className="w-12 h-12 rounded-xl object-cover shrink-0" referrerPolicy="no-referrer" />
                     <div className="min-w-0">
                       <span className="text-[10px] text-[#C98C63] font-bold">
-                        {c.level} • {c.duration} {c.isFreeTrial && <span className="ml-1.5 px-1.5 py-0.5 rounded bg-[#C98C63]/15 text-[#C98C63] text-[9px] font-extrabold animate-pulse">★ 무료 체험</span>}
+                        {c.level} • {c.duration} {c.isFreeTrial && <span className="ml-1.5 px-1.5 py-0.5 rounded bg-[#C98C63]/15 text-[#C98C63] text-[9px] font-extrabold animate-pulse">★ 무료 체험</span>} {c.isFeatured && <span className="ml-1.5 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[9px] font-bold">추천</span>}
                       </span>
                       <h4 className="font-bold text-[#2E2A27] dark:text-[#F3EFEA] truncate">{c.name}</h4>
                       <span className="font-semibold text-gray-500 block">
