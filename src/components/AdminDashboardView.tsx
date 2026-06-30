@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from 'react';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../firebase';
 import { useApp } from '../context/AppContext';
 import { WorkshopClass, Booking, Notice, Review, ProductItem } from '../types';
 import {
@@ -95,26 +97,28 @@ export default function AdminDashboardView() {
   const [isProductDragOver, setIsProductDragOver] = useState(false);
   const productImageFileInputRef = React.useRef<HTMLInputElement>(null);
 
-  const processImageFile = (file: File) => {
+  const [classImageUploading, setClassImageUploading] = useState(false);
+  const [productImageUploading, setProductImageUploading] = useState(false);
+
+  const uploadToStorage = async (file: File, setter: (url: string) => void, setUploading: (v: boolean) => void) => {
     if (!file || !file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX = 900;
-        let { width, height } = img;
-        if (width > MAX) { height = Math.round((height * MAX) / width); width = MAX; }
-        if (height > MAX) { width = Math.round((width * MAX) / height); height = MAX; }
-        canvas.width = width;
-        canvas.height = height;
-        canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
-        setClassImageUrl(canvas.toDataURL('image/jpeg', 0.82));
-      };
-      img.src = ev.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const storageRef = ref(storage, `images/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      setter(url);
+    } catch (e) {
+      alert('이미지 업로드 실패. Firebase Storage 규칙을 확인해주세요.');
+      console.error(e);
+    } finally {
+      setUploading(false);
+    }
   };
+
+  const processImageFile = (file: File) =>
+    uploadToStorage(file, setClassImageUrl, setClassImageUploading);
 
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -128,26 +132,8 @@ export default function AdminDashboardView() {
     if (file) processImageFile(file);
   };
 
-  const processProductImageFile = (file: File) => {
-    if (!file || !file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX = 900;
-        let { width, height } = img;
-        if (width > MAX) { height = Math.round((height * MAX) / width); width = MAX; }
-        if (height > MAX) { width = Math.round((width * MAX) / height); height = MAX; }
-        canvas.width = width;
-        canvas.height = height;
-        canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
-        setProductImageUrl(canvas.toDataURL('image/jpeg', 0.82));
-      };
-      img.src = ev.target?.result as string;
-    };
-    reader.readAsDataURL(file);
-  };
+  const processProductImageFile = (file: File) =>
+    uploadToStorage(file, setProductImageUrl, setProductImageUploading);
 
   const handleProductImageDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -751,9 +737,9 @@ export default function AdminDashboardView() {
                         onChange={handleImageFileChange}
                         className="hidden"
                       />
-                      <Upload className={`w-6 h-6 transition-colors ${isDragOver ? 'text-[#C98C63]' : 'text-[#C98C63]/60'}`} />
+                      <Upload className={`w-6 h-6 transition-colors ${classImageUploading ? 'animate-bounce text-[#C98C63]' : isDragOver ? 'text-[#C98C63]' : 'text-[#C98C63]/60'}`} />
                       <p className="text-[11px] font-bold text-[#C98C63]">
-                        {isDragOver ? '여기에 놓으세요!' : '이미지를 드래그하거나 클릭해서 선택'}
+                        {classImageUploading ? '업로드 중...' : isDragOver ? '여기에 놓으세요!' : '이미지를 드래그하거나 클릭해서 선택'}
                       </p>
                       <p className="text-[10px] text-gray-400">JPG, PNG, WEBP 등 이미지 파일</p>
                     </div>
@@ -941,9 +927,9 @@ export default function AdminDashboardView() {
                       className="hidden"
                       onChange={(e) => { const f = e.target.files?.[0]; if (f) processProductImageFile(f); }}
                     />
-                    <Upload className={`w-5 h-5 transition-colors ${isProductDragOver ? 'text-[#C98C63]' : 'text-[#C98C63]/60'}`} />
+                    <Upload className={`w-5 h-5 transition-colors ${productImageUploading ? 'animate-bounce text-[#C98C63]' : isProductDragOver ? 'text-[#C98C63]' : 'text-[#C98C63]/60'}`} />
                     <p className="text-[11px] font-bold text-[#C98C63]">
-                      {isProductDragOver ? '여기에 놓으세요!' : '이미지를 드래그하거나 클릭해서 선택'}
+                      {productImageUploading ? '업로드 중...' : isProductDragOver ? '여기에 놓으세요!' : '이미지를 드래그하거나 클릭해서 선택'}
                     </p>
                     <p className="text-[10px] text-gray-400">JPG, PNG, WEBP 등 이미지 파일</p>
                   </div>
