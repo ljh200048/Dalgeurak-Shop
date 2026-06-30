@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ImageDropzone from './ImageDropzone';
+import ProductImageUploader from './ProductImageUploader';
 
 export default function AdminDashboardView() {
   const { 
@@ -86,7 +87,7 @@ export default function AdminDashboardView() {
   const [productPrice, setProductPrice] = useState(15000);
   const [productCategory, setProductCategory] = useState<ProductItem['category']>('키링');
   const [productDesc, setProductDesc] = useState('');
-  const [productImageUrl, setProductImageUrl] = useState('https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&q=80&w=600');
+  const [productImageUrl, setProductImageUrl] = useState('');
   const [productStock, setProductStock] = useState(10);
   const [productIsFeatured, setProductIsFeatured] = useState(false);
 
@@ -234,7 +235,7 @@ export default function AdminDashboardView() {
       setProductDesc('');
       setProductPrice(15000);
       setProductCategory('키링');
-      setProductImageUrl('https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&q=80&w=600');
+      setProductImageUrl('');
       setProductStock(10);
       setProductIsFeatured(false);
     } catch {
@@ -694,7 +695,7 @@ export default function AdminDashboardView() {
                   setProductDesc('');
                   setProductPrice(15000);
                   setProductCategory('키링');
-                  setProductImageUrl('https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&q=80&w=600');
+                  setProductImageUrl('');
                   setProductStock(10);
                   setProductIsFeatured(false);
                   setProductFormOpen(true); 
@@ -764,11 +765,10 @@ export default function AdminDashboardView() {
                   </div>
                 </div>
 
-                <ImageDropzone 
+                <ProductImageUploader 
                   imageUrl={productImageUrl}
                   onImageChange={setProductImageUrl}
-                  label="굿즈 대표 이미지"
-                  defaultFallbackUrl="https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&q=80&w=600"
+                  label="굿즈 대표 이미지 (File Upload)"
                 />
 
                 <div className="flex items-center gap-2 text-xs">

@@ -19,9 +19,58 @@ import {
   deleteDoc,
   query,
   where,
-  orderBy
+  orderBy,
+  onSnapshot,
+  serverTimestamp
 } from 'firebase/firestore';
 import { auth, db } from '../firebase';
+
+export enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+export interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  }
+}
+
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo: auth.currentUser?.providerData?.map(provider => ({
+        providerId: provider.providerId,
+        email: provider.email,
+      })) || []
+    },
+    operationType,
+    path
+  };
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
 import { 
   WorkshopClass, 
   ProductItem, 
@@ -223,7 +272,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             loadedProducts = [...INITIAL_PRODUCTS];
             try {
               for (const p of INITIAL_PRODUCTS) {
-                await setDoc(doc(productsCol, p.id), p);
+                await setDoc(doc(productsCol, p.id), {
+                  title: p.name,
+                  price: p.price,
+                  image: p.imageUrl,
+                  description: p.description,
+                  category: p.category,
+                  stock: p.stock,
+                  wishlistCount: p.wishlistCount,
+                  isFeatured: p.isFeatured || false,
+                  updatedAt: serverTimestamp()
+                });
               }
             } catch (e) {
               console.warn("Guest lacks write permissions to seed products.");
@@ -231,7 +290,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           } else {
             // Filter out 'prod-free-kit' from Firestore fetched products if any
             loadedProducts = productsSnapshot.docs
-              .map(doc => doc.data() as ProductItem)
+              .map(doc => {
+                const data = doc.data();
+                return {
+                  id: doc.id,
+                  name: data.title || data.name || '',
+                  price: Number(data.price || 0),
+                  imageUrl: data.image || data.imageUrl || '',
+                  description: data.description || '',
+                  category: data.category || '키링',
+                  stock: Number(data.stock !== undefined ? data.stock : 99),
+                  wishlistCount: Number(data.wishlistCount || 0),
+                  isFeatured: !!(data.isFeatured || false)
+                } as ProductItem;
+              })
               .filter(p => p.id !== 'prod-free-kit');
             
             // Delete 'prod-free-kit' from Firestore to clean up DB
@@ -465,6 +537,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setWishlist([]);
       }
       setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Real-time products collection subscriber
+  useEffect(() => {
+    const productsCol = collection(db, 'products');
+    const unsubscribe = onSnapshot(productsCol, (snapshot) => {
+      if (snapshot.empty) {
+        return;
+      }
+      const loadedProducts = snapshot.docs
+        .map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            name: data.title || data.name || '',
+            price: Number(data.price || 0),
+            imageUrl: data.image || data.imageUrl || '',
+            description: data.description || '',
+            category: data.category || '키링',
+            stock: Number(data.stock !== undefined ? data.stock : 99),
+            wishlistCount: Number(data.wishlistCount || 0),
+            isFeatured: !!(data.isFeatured || false)
+          } as ProductItem;
+        })
+        .filter(p => p.id !== 'prod-free-kit');
+      
+      setProducts(loadedProducts);
+    }, (error) => {
+      // Catch permission denied or other errors and report context
+      handleFirestoreError(error, OperationType.GET, 'products');
     });
 
     return () => unsubscribe();
@@ -1116,40 +1221,62 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const adminAddProduct = async (newProduct: Omit<ProductItem, 'id' | 'wishlistCount'>) => {
     const productId = `prod-${Date.now()}`;
-    const fullProduct: ProductItem = {
-      ...newProduct,
-      id: productId,
-      wishlistCount: 0
+    const firestorePayload = {
+      title: newProduct.name,
+      price: Number(newProduct.price),
+      image: newProduct.imageUrl,
+      description: newProduct.description,
+      category: newProduct.category,
+      stock: Number(newProduct.stock),
+      wishlistCount: 0,
+      isFeatured: !!newProduct.isFeatured,
+      updatedAt: serverTimestamp()
     };
 
-    setProducts([fullProduct, ...products]);
-
     try {
-      await setDoc(doc(db, 'products', productId), fullProduct);
-    } catch (e) {
-      console.warn("Admin add product failed:", e);
+      await setDoc(doc(db, 'products', productId), firestorePayload);
+    } catch (error) {
+      console.warn("Admin add product failed:", error);
+      const fullProduct: ProductItem = {
+        ...newProduct,
+        id: productId,
+        wishlistCount: 0
+      };
+      setProducts([fullProduct, ...products]);
+      handleFirestoreError(error, OperationType.WRITE, `products/${productId}`);
     }
   };
 
   const adminUpdateProduct = async (productId: string, updatedProduct: Partial<ProductItem>) => {
-    const updated = products.map(p => p.id === productId ? { ...p, ...updatedProduct } : p);
-    setProducts(updated);
+    const firestorePayload: any = {
+      updatedAt: serverTimestamp()
+    };
+    if (updatedProduct.name !== undefined) firestorePayload.title = updatedProduct.name;
+    if (updatedProduct.price !== undefined) firestorePayload.price = Number(updatedProduct.price);
+    if (updatedProduct.imageUrl !== undefined) firestorePayload.image = updatedProduct.imageUrl;
+    if (updatedProduct.description !== undefined) firestorePayload.description = updatedProduct.description;
+    if (updatedProduct.category !== undefined) firestorePayload.category = updatedProduct.category;
+    if (updatedProduct.stock !== undefined) firestorePayload.stock = Number(updatedProduct.stock);
+    if (updatedProduct.isFeatured !== undefined) firestorePayload.isFeatured = !!updatedProduct.isFeatured;
 
     try {
-      await updateDoc(doc(db, 'products', productId), updatedProduct);
-    } catch (e) {
-      console.warn("Admin update product failed:", e);
+      await updateDoc(doc(db, 'products', productId), firestorePayload);
+    } catch (error) {
+      console.warn("Admin update product failed:", error);
+      const updated = products.map(p => p.id === productId ? { ...p, ...updatedProduct } : p);
+      setProducts(updated);
+      handleFirestoreError(error, OperationType.WRITE, `products/${productId}`);
     }
   };
 
   const adminDeleteProduct = async (productId: string) => {
-    const updated = products.filter(p => p.id !== productId);
-    setProducts(updated);
-
     try {
       await deleteDoc(doc(db, 'products', productId));
-    } catch (e) {
-      console.warn("Admin delete product failed:", e);
+    } catch (error) {
+      console.warn("Admin delete product failed:", error);
+      const updated = products.filter(p => p.id !== productId);
+      setProducts(updated);
+      handleFirestoreError(error, OperationType.DELETE, `products/${productId}`);
     }
   };
 
