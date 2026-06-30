@@ -1,7 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { initializeAuth, browserSessionPersistence } from 'firebase/auth';
+import { initializeAuth, browserLocalPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: "AIzaSyA3nBhomUYT3_LEG4rRY9xLrKEoS1MUsdE",
@@ -16,13 +15,10 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Session-only persistence: logged out when tab/browser is closed
+// Initialize Auth with persistence
 export const auth = initializeAuth(app, {
-  persistence: browserSessionPersistence
+  persistence: browserLocalPersistence
 });
 
 // Initialize Firestore (uses default database)
 export const db = getFirestore(app);
-
-// Initialize Firebase Storage
-export const storage = getStorage(app);

@@ -134,7 +134,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     chatId: '',
     isEnabled: false
   });
-
+  
   const [autoApproveBookings, setAutoApproveBookingsState] = useState<boolean>(() => {
     try {
       const item = localStorage.getItem('dalgeurak_auto_approve_bookings');
@@ -152,9 +152,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       console.warn("Saving auto_approve_bookings to localStorage failed:", e);
     }
   };
-
-  const telegramConfigRef = React.useRef(telegramConfig);
-  useEffect(() => { telegramConfigRef.current = telegramConfig; }, [telegramConfig]);
 
   // Local storage backup keys
   const STORAGE_PREFIX = 'dalgeurak_';
@@ -328,15 +325,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           // Load from LocalStorage or fallback to seed
           loadedClasses = getStorage<WorkshopClass[]>('classes', INITIAL_CLASSES);
           for (const initialClass of INITIAL_CLASSES) {
-            if (!loadedClasses.some(c => c.id === initialClass.id)) {
+            const existingIdx = loadedClasses.findIndex(c => c.id === initialClass.id);
+            if (existingIdx === -1) {
               loadedClasses.push(initialClass);
+            } else {
+              const existing = loadedClasses[existingIdx];
+              if (existing.imageUrl.includes('photo-1513519245088') || existing.imageUrl !== initialClass.imageUrl) {
+                loadedClasses[existingIdx] = initialClass;
+              }
             }
           }
 
           loadedProducts = getStorage<ProductItem[]>('products', INITIAL_PRODUCTS);
           for (const initialProduct of INITIAL_PRODUCTS) {
-            if (!loadedProducts.some(p => p.id === initialProduct.id)) {
+            const existingIdx = loadedProducts.findIndex(p => p.id === initialProduct.id);
+            if (existingIdx === -1) {
               loadedProducts.push(initialProduct);
+            } else {
+              const existing = loadedProducts[existingIdx];
+              if (existing.imageUrl.includes('photo-1513519245088') || existing.imageUrl !== initialProduct.imageUrl) {
+                loadedProducts[existingIdx] = initialProduct;
+              }
             }
           }
           loadedNotices = getStorage<Notice[]>('notices', INITIAL_NOTICES);
@@ -660,30 +669,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const sendTelegramNotification = async (booking: Booking) => {
-    const config = telegramConfigRef.current;
+    const config = telegramConfig;
     if (!config.isEnabled || !config.botToken || !config.chatId) {
       return;
     }
-
-    const isFreeTrial = booking.totalPrice === 0;
-    const header = isFreeTrial
-      ? `🎁 *[달그락 공방 - 무료 체험 신청]*`
+    
+    const targetClass = classes.find(c => c.id === booking.classId);
+    const isFreeTrial = targetClass?.isFreeTrial || booking.totalPrice === 0 || booking.className.includes('무료');
+    
+    const headerTitle = isFreeTrial 
+      ? `🎁 *[달그락 공방 - 무료 체험 신청 접수]*` 
       : `🔔 *[달그락 공방 - 새로운 예약 알림]*`;
-
-    const message =
-      `${header}\n\n` +
+      
+    const message = `${headerTitle}\n\n` +
+      `• *구분*: ${isFreeTrial ? '★ 무료 체험 신청 완료' : '일반 클래스 예약 완료'}\n` +
       `• *클래스명*: ${booking.className}\n` +
       `• *예약자명*: ${booking.userName}\n` +
       `• *연락처*: ${booking.guestPhone || '미기재'}\n` +
       `• *예약일시*: ${booking.date} (${booking.time})\n` +
       `• *예약인원*: ${booking.headCount}명\n` +
-      `• *결제금액*: ${isFreeTrial ? '✅ 100% 무료 체험' : booking.totalPrice.toLocaleString() + '원'}\n` +
-      `• *예약번호*: \`${booking.id}\``;
-
+      `• *결제금액*: ${booking.totalPrice === 0 ? '0원 (무료 체험)' : booking.totalPrice.toLocaleString() + '원'}\n` +
+      `• *예약번호*: ${booking.id}\n\n` +
+      `⚡ *예약 상태*: ${booking.status === 'approved' ? '실시간 자동 승인 완료' : '대기 중 (관리자 확인 필요)'}`;
+      
     try {
       await fetch(`https://api.telegram.org/bot${config.botToken}/sendMessage`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
           chat_id: config.chatId,
           text: message,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { AppProvider } from './context/AppContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -15,42 +15,11 @@ import LoginView from './components/LoginView';
 import AdminDashboardView from './components/AdminDashboardView';
 import ClassDetailModal from './components/ClassDetailModal';
 
-const VALID_VIEWS = new Set([
-  'home', 'classes', 'freetrials', 'goods', 'cart', 'gallery',
-  'reviews', 'notices', 'notice', 'faq', 'mypage', 'favorites', 'login',
-  'register', 'admin', 'booking-check', 'class-detail',
-]);
-
-function getViewFromPath(pathname: string): string {
-  const segment = pathname.replace(/^\//, '') || 'home';
-  if (segment === 'notice') return 'notices';
-  return VALID_VIEWS.has(segment) ? segment : 'home';
-}
-
 function AppContent() {
-  const [currentView, setCurrentView] = useState<string>(
-    getViewFromPath(window.location.pathname)
-  );
+  const [currentView, setView] = useState<string>('home');
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState<boolean>(false);
   const [searchToggle, setSearchToggle] = useState<boolean>(false);
-
-  const setView = (view: string) => {
-    setCurrentView(view);
-    const urlView = view === 'notices' ? 'notice' : view;
-    const newPath = urlView === 'home' ? '/' : `/${urlView}`;
-    if (window.location.pathname !== newPath) {
-      window.history.pushState({}, '', newPath);
-    }
-  };
-
-  useEffect(() => {
-    const onPopState = () => {
-      setCurrentView(getViewFromPath(window.location.pathname));
-    };
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
-  }, []);
 
   const renderView = () => {
     switch (currentView) {

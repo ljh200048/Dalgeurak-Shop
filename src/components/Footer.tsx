@@ -30,7 +30,7 @@ export default function Footer({ setView }: FooterProps) {
             {/* Social Icons */}
             <div className="flex space-x-3 pt-2">
               <a 
-                href="https://www.instagram.com/cozy_clink_114?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" 
+                href="https://www.instagram.com/cozy_clink_114?igsh=MWVucW1jcGFwa2J2bQ==" 
                 target="_blank" 
                 rel="noreferrer"
                 className="w-8 h-8 rounded-full bg-[#FFFDF9] dark:bg-[#2E2A27] flex items-center justify-center hover:bg-[#C98C63] dark:hover:bg-[#C98C63] hover:text-white dark:hover:text-white transition-all text-[#2E2A27] dark:text-[#F3EFEA]"

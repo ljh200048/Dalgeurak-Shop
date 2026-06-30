@@ -199,81 +199,6 @@ export default function HomeView({ setView, setSelectedClassId }: HomeViewProps)
         </section>
       )}
 
-      {/* 5-1. Special Free Trials Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        <div className="space-y-3 text-center">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-semibold tracking-wider uppercase">
-            <Sparkles className="w-3.5 h-3.5" /> Dalgeurak's Gift to You
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-serif font-bold text-[#2E2A27] dark:text-[#F3EFEA] tracking-tight">
-            🎁 무료 체험 이벤트
-          </h2>
-          <p className="text-sm sm:text-base text-[#2E2A27]/70 dark:text-[#F3EFEA]/70 max-w-2xl mx-auto leading-relaxed">
-            달그락 상점이 제공하는 특별한 무료 체험으로 손끝의 기쁨을 미리 느껴보세요. 부담 없이 우리 공방의 따뜻한 감성을 직접 경험할 수 있습니다.
-          </p>
-        </div>
-
-        {/* Free trials grid - only show free classes */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {classes.filter(c => c.price === 0).slice(0, 3).map((item) => (
-            <motion.div
-              key={item.id}
-              whileHover={{ y: -8 }}
-              transition={{ duration: 0.3 }}
-              onClick={() => {
-                setSelectedClassId(item.id);
-                setView('class-detail');
-              }}
-              className="group cursor-pointer bg-gradient-to-br from-[#FFFDF9] to-[#F6EFE7] dark:from-[#27221E] dark:to-[#322B27] rounded-2xl overflow-hidden border-2 border-dashed border-emerald-500/40 dark:border-emerald-500/30 shadow-sm hover:shadow-lg hover:border-emerald-500 transition-all flex flex-col"
-            >
-              {/* Image box with badge */}
-              <div className="relative aspect-4/3 overflow-hidden bg-gray-100 dark:bg-zinc-800">
-                <img 
-                  src={item.imageUrl} 
-                  alt={item.name} 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                <span className="absolute top-4 left-4 px-3 py-1 rounded-full bg-emerald-500 text-white text-[11px] font-bold tracking-widest uppercase shadow-lg animate-pulse">
-                  🎁 100% 무료
-                </span>
-              </div>
-
-              {/* Body */}
-              <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                <div className="space-y-2">
-                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 tracking-widest uppercase">
-                    {item.level} 난이도 • {item.duration}
-                  </span>
-                  <h3 className="font-serif font-bold text-[#2E2A27] dark:text-[#F3EFEA] text-base group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-2">
-                    {item.name}
-                  </h3>
-                  <p className="text-xs text-[#2E2A27]/70 dark:text-[#F3EFEA]/70 line-clamp-2 leading-relaxed">
-                    {item.description}
-                  </p>
-                </div>
-
-                <button className="w-full px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white text-xs sm:text-sm font-bold rounded-full transition-all shadow-sm hover:shadow-md transform group-hover:-translate-y-0.5">
-                  무료 체험 신청하기 →
-                </button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        <div className="text-center">
-          <button 
-            onClick={() => setView('freetrials')}
-            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold rounded-full shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5"
-          >
-            <Sparkles className="w-5 h-5" />
-            모든 무료 체험 보기
-            <ArrowRight className="w-5 h-5" />
-          </button>
-        </div>
-      </section>
-
       {/* 5. Popular Classes (Featured) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -412,7 +337,7 @@ export default function HomeView({ setView, setSelectedClassId }: HomeViewProps)
               </a>
               <span className="text-gray-300 dark:text-zinc-700 hidden sm:inline">|</span>
               <a 
-                href="https://www.instagram.com/cozy_clink_114?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" 
+                href="https://www.instagram.com/cozy_clink_114?igsh=MWVucW1jcGFwa2J2bQ==" 
                 target="_blank" 
                 rel="noreferrer"
                 className="text-xs font-bold text-indigo-500 hover:underline flex items-center gap-1"
