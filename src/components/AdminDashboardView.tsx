@@ -20,6 +20,7 @@ import {
   Download
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import ImageDropzone from './ImageDropzone';
 
 export default function AdminDashboardView() {
   const { 
@@ -593,33 +594,12 @@ export default function AdminDashboardView() {
                   </div>
                 </div>
 
-                <div className="space-y-1 text-xs">
-                  <label className="font-bold text-gray-400">클래스 대표 이미지 URL</label>
-                  <div className="flex gap-2">
-                    <input 
-                      type="text" 
-                      required
-                      placeholder="이미지 주소를 입력하세요 (예: https://images.unsplash.com/...)" 
-                      value={classImageUrl}
-                      onChange={(e) => setClassImageUrl(e.target.value)}
-                      className="flex-1 p-2 border rounded-lg bg-[#FFFDF9] dark:bg-[#1F1B18]"
-                    />
-                    {classImageUrl && (
-                      <img 
-                        src={classImageUrl} 
-                        alt="미리보기" 
-                        className="w-10 h-10 rounded-lg object-cover border border-gray-200"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&q=80&w=600';
-                        }}
-                        referrerPolicy="no-referrer"
-                      />
-                    )}
-                  </div>
-                  <p className="text-[10px] text-gray-400">
-                    Unsplash 등 무료 이미지 주소를 넣으시면 클래스 카드 디자인에 반영됩니다.
-                  </p>
-                </div>
+                <ImageDropzone 
+                  imageUrl={classImageUrl}
+                  onImageChange={setClassImageUrl}
+                  label="클래스 대표 이미지"
+                  defaultFallbackUrl="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&q=80&w=600"
+                />
 
                 <div className="space-y-1 text-xs">
                   <label className="font-bold text-gray-400">클래스 상세 소개</label>
@@ -769,30 +749,12 @@ export default function AdminDashboardView() {
                   </div>
                 </div>
 
-                <div className="space-y-1 text-xs">
-                  <label className="font-bold text-gray-400">굿즈 대표 이미지 URL</label>
-                  <div className="flex gap-2">
-                    <input 
-                      type="text" 
-                      required
-                      placeholder="이미지 주소를 입력하세요 (예: https://images.unsplash.com/...)" 
-                      value={productImageUrl}
-                      onChange={(e) => setProductImageUrl(e.target.value)}
-                      className="flex-1 p-2 border rounded-lg bg-[#FFFDF9] dark:bg-[#1F1B18]"
-                    />
-                    {productImageUrl && (
-                      <img 
-                        src={productImageUrl} 
-                        alt="미리보기" 
-                        className="w-10 h-10 rounded-lg object-cover border border-gray-200"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&q=80&w=600';
-                        }}
-                        referrerPolicy="no-referrer"
-                      />
-                    )}
-                  </div>
-                </div>
+                <ImageDropzone 
+                  imageUrl={productImageUrl}
+                  onImageChange={setProductImageUrl}
+                  label="굿즈 대표 이미지"
+                  defaultFallbackUrl="https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&q=80&w=600"
+                />
 
                 <div className="flex items-center gap-2 text-xs">
                   <input 
