@@ -29,7 +29,8 @@ export default function ClassDetailModal({ classId, setView, setSelectedClassId 
     bookClass, 
     coupons, 
     wishlist, 
-    toggleFavoriteClass 
+    toggleFavoriteClass,
+    autoApproveBookings
   } = useApp();
 
   const selectedClass = classes.find(c => c.id === classId);
@@ -195,6 +196,19 @@ export default function ClassDetailModal({ classId, setView, setSelectedClassId 
           </div>
           <div className="space-y-2">
             <h2 className="font-serif font-bold text-2xl text-[#2E2A27] dark:text-[#F3EFEA]">예약이 완료되었습니다!</h2>
+            
+            <div className="py-1">
+              {autoApproveBookings ? (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 font-bold text-[11px] border border-emerald-500/20">
+                  <span>⚡ 실시간 즉시 승인 완료 (FAST PASS)</span>
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 font-bold text-[11px] border border-amber-500/20">
+                  <span>⏳ 예약 검토 대기 중 (관리자 확인 후 확정)</span>
+                </div>
+              )}
+            </div>
+
             {!currentUser ? (
               <p className="text-xs text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-950/20 p-3 rounded-xl border border-amber-500/15 max-w-md mx-auto">
                 ⚠️ 비회원 체험 예약 완료! 예약번호와 입력하신 휴대폰 번호로 예약확인 탭에서 내역 조회가 가능합니다.

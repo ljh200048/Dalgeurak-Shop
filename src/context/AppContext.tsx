@@ -55,6 +55,8 @@ interface AppContextType {
   coupons: Coupon[];
   cart: { productId: string; quantity: number }[];
   wishlist: string[];
+  autoApproveBookings: boolean;
+  setAutoApproveBookings: (value: boolean) => void;
   
   // Auth Functions
   loginWithEmail: (email: string, password: string) => Promise<UserProfile>;
@@ -132,6 +134,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     chatId: '',
     isEnabled: false
   });
+  
+  const [autoApproveBookings, setAutoApproveBookingsState] = useState<boolean>(() => {
+    try {
+      const item = localStorage.getItem('dalgeurak_auto_approve_bookings');
+      return item ? JSON.parse(item) : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const setAutoApproveBookings = (val: boolean) => {
+    setAutoApproveBookingsState(val);
+    try {
+      localStorage.setItem('dalgeurak_auto_approve_bookings', JSON.stringify(val));
+    } catch (e) {
+      console.warn("Saving auto_approve_bookings to localStorage failed:", e);
+    }
+  };
 
   // Local storage backup keys
   const STORAGE_PREFIX = 'dalgeurak_';
@@ -596,7 +616,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       time,
       headCount,
       totalPrice: finalPrice,
-      status: 'pending',
+      status: autoApproveBookings ? 'approved' : 'pending',
       qrCode: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=DALGEURAK-RESERVE-${bookingId}`,
       createdAt: new Date().toISOString(),
       guestPhone: guestPhone
@@ -1234,6 +1254,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       coupons,
       cart,
       wishlist,
+      autoApproveBookings,
+      setAutoApproveBookings,
       
       loginWithEmail,
       signupWithEmail,

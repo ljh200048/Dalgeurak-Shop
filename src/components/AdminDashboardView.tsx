@@ -42,7 +42,9 @@ export default function AdminDashboardView() {
     adminDeleteReview,
     recreateAllClasses,
     telegramConfig,
-    updateTelegramConfig
+    updateTelegramConfig,
+    autoApproveBookings,
+    setAutoApproveBookings
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'stats' | 'classes' | 'products' | 'bookings' | 'notices' | 'reviews' | 'telegram'>('stats');
@@ -883,6 +885,40 @@ export default function AdminDashboardView() {
         {activeTab === 'bookings' && (
           <div className="space-y-4">
             <h3 className="font-serif font-bold text-base text-[#2E2A27]">실시간 체험 예약 신청 장부 ({bookings.length}건)</h3>
+
+            {/* Auto Approval Control */}
+            <div className="p-4 bg-amber-50/60 dark:bg-amber-950/20 border border-[#F6EFE7] dark:border-amber-900/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2 w-2">
+                    <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${autoApproveBookings ? 'bg-emerald-400' : 'bg-amber-400'} opacity-75`}></span>
+                    <span className={`relative inline-flex rounded-full h-2 w-2 ${autoApproveBookings ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
+                  </span>
+                  <p className="font-bold text-[#2E2A27] dark:text-[#FFFDF9] flex items-center gap-1">
+                    실시간 예약 초고속 자동 승인 시스템
+                    <span className="text-[10px] bg-amber-100 text-[#A26745] px-1.5 py-0.5 rounded-sm font-semibold">⚡ FAST PASS</span>
+                  </p>
+                </div>
+                <p className="text-gray-500 text-[10px]">
+                  {autoApproveBookings 
+                    ? "활성화됨: 수강생이 클래스를 예약하면 관리자 승인 단계를 건너뛰고 '예약 승인완료(approved)'로 즉시 확정됩니다." 
+                    : "비활성화됨: 수강생이 클래스를 예약하면 '대기 중(pending)' 상태가 되며, 관리자가 우측의 '예약 승인' 버튼을 눌러야 확정됩니다."}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setAutoApproveBookings(!autoApproveBookings)}
+                  className={`px-4 py-2 rounded-full font-bold cursor-pointer transition-all duration-300 text-xs shadow-2xs ${
+                    autoApproveBookings 
+                      ? 'bg-[#C98C63] text-white hover:bg-[#B37B53]' 
+                      : 'bg-gray-200 dark:bg-[#3D3530] text-gray-700 dark:text-gray-300 hover:bg-gray-300'
+                  }`}
+                >
+                  {autoApproveBookings ? '⚡ 실시간 자동 승인 중 (ON)' : '⏸ 수동 승인 모드 (OFF)'}
+                </button>
+              </div>
+            </div>
 
             {bookings.length === 0 ? (
               <p className="text-xs text-gray-400 italic py-10 text-center">신청 들어온 예약 내역이 없습니다.</p>

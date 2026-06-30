@@ -14,7 +14,7 @@ interface ClassesViewProps {
 }
 
 export default function ClassesView({ setView, setSelectedClassId, initialFilterFree = false }: ClassesViewProps) {
-  const { classes, bookClass, currentUser } = useApp();
+  const { classes, bookClass, currentUser, autoApproveBookings } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>(initialFilterFree ? '무료' : '전체');
   const [selectedLevel, setSelectedLevel] = useState<string>('전체');
@@ -536,6 +536,17 @@ export default function ClassesView({ setView, setSelectedClassId, initialFilter
                       <h4 className="font-serif font-bold text-xl text-[#2E2A27] dark:text-[#F3EFEA]">
                         무료체험 예약이 완료되었습니다!
                       </h4>
+                      <div className="py-1">
+                        {autoApproveBookings ? (
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 font-bold text-[10px] border border-emerald-500/20">
+                            <span>⚡ 실시간 즉시 승인 완료 (FAST PASS)</span>
+                          </div>
+                        ) : (
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 font-bold text-[10px] border border-amber-500/20">
+                            <span>⏳ 예약 검토 대기 중 (관리자 확인 후 확정)</span>
+                          </div>
+                        )}
+                      </div>
                       <p className="text-xs text-[#2E2A27]/70 dark:text-[#F3EFEA]/70 max-w-sm mx-auto leading-relaxed">
                         등록하신 성함과 연락처 정보로 정상 예약되었습니다. 예약 확인은 상단 <strong>'예약확인'</strong> 탭에서 언제든지 가능합니다.
                       </p>
