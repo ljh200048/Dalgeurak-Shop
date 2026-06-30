@@ -1,0 +1,185 @@
+{
+  "entities": {
+    "WorkshopClass": {
+      "title": "WorkshopClass",
+      "description": "Details of handcraft workshop classes offered by Dalgeurak",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "categories": { "type": "array" },
+        "level": { "type": "string" },
+        "duration": { "type": "string" },
+        "maxPeople": { "type": "number" },
+        "price": { "type": "number" },
+        "imageUrl": { "type": "string" },
+        "rating": { "type": "number" },
+        "reviewCount": { "type": "number" },
+        "intro": { "type": "string" },
+        "materials": { "type": "array" },
+        "provided": { "type": "array" },
+        "completedItem": { "type": "string" },
+        "precautions": { "type": "array" },
+        "refundPolicy": { "type": "string" },
+        "isFeatured": { "type": "boolean" },
+        "isFreeTrial": { "type": "boolean" }
+      }
+    },
+    "ProductItem": {
+      "title": "ProductItem",
+      "description": "Craft kits and accessories products sold in the store",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "image": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "stock": { "type": "number" },
+        "wishlistCount": { "type": "number" },
+        "isFeatured": { "type": "boolean" }
+      }
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "Workshop bookings or class reservations",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "classId": { "type": "string" },
+        "className": { "type": "string" },
+        "classImage": { "type": "string" },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "headCount": { "type": "number" },
+        "totalPrice": { "type": "number" },
+        "status": { "type": "string" },
+        "qrCode": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "guestPhone": { "type": "string" }
+      }
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Reviews of classes left by participants",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "rating": { "type": "number" },
+        "content": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "likes": { "type": "number" },
+        "likedBy": { "type": "array" },
+        "comments": { "type": "array" },
+        "classId": { "type": "string" },
+        "className": { "type": "string" },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "GalleryItem": {
+      "title": "GalleryItem",
+      "description": "Users photo submissions showing completed crafts",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "description": { "type": "string" },
+        "likes": { "type": "number" },
+        "likedBy": { "type": "array" },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "Notice": {
+      "title": "Notice",
+      "description": "Announcements, events, and bulletins posted by the admin",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "author": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "category": { "type": "string" },
+        "views": { "type": "number" }
+      }
+    },
+    "Coupon": {
+      "title": "Coupon",
+      "description": "Store discount coupons available for bookings",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "code": { "type": "string" },
+        "name": { "type": "string" },
+        "discountType": { "type": "string" },
+        "discountValue": { "type": "number" },
+        "description": { "type": "string" },
+        "expiryDate": { "type": "string" },
+        "status": { "type": "string" }
+      }
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Detailed persistent profile information of registered users",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string" },
+        "points": { "type": "number" },
+        "coupons": { "type": "array" },
+        "favoriteClasses": { "type": "array" },
+        "cart": { "type": "array" },
+        "createdAt": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/classes/{classId}": {
+      "schema": "WorkshopClass",
+      "description": "Collection of custom workshop classes"
+    },
+    "/products/{productId}": {
+      "schema": "ProductItem",
+      "description": "Collection of craft kits and items"
+    },
+    "/reservations/{reservationId}": {
+      "schema": "Booking",
+      "description": "Customer reservations / bookings"
+    },
+    "/reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "Class customer reviews"
+    },
+    "/gallery/{galleryId}": {
+      "schema": "GalleryItem",
+      "description": "Photo showcase posts"
+    },
+    "/notices/{noticeId}": {
+      "schema": "Notice",
+      "description": "Notice and news alerts"
+    },
+    "/coupons/{couponId}": {
+      "schema": "Coupon",
+      "description": "Discount coupon definitions"
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Customer profile collections"
+    }
+  }
+}

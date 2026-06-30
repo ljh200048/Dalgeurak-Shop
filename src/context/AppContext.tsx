@@ -21,7 +21,8 @@ import {
   where,
   orderBy,
   onSnapshot,
-  serverTimestamp
+  serverTimestamp,
+  getDocFromServer
 } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
@@ -94,6 +95,8 @@ import {
 interface AppContextType {
   currentUser: UserProfile | null;
   loading: boolean;
+  dbError: string | null;
+  setDbError: (error: string | null) => void;
   classes: WorkshopClass[];
   products: ProductItem[];
   bookings: Booking[];
@@ -185,316 +188,424 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     chatId: '',
     isEnabled: false
   });
-  const [homeHeroImage, setHomeHeroImage] = useState<string>('');
+  const [homeHeroImage, setHomeHeroImage] = useState<string>('https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&q=80&w=1600');
+  const [dbError, setDbError] = useState<string | null>(null);
   
-  const [autoApproveBookings, setAutoApproveBookingsState] = useState<boolean>(() => {
-    try {
-      const item = localStorage.getItem('dalgeurak_auto_approve_bookings');
-      return item ? JSON.parse(item) : true;
-    } catch {
-      return true;
-    }
-  });
+  const [autoApproveBookings, setAutoApproveBookingsState] = useState<boolean>(true);
 
-  const setAutoApproveBookings = (val: boolean) => {
+  // onSnapshot listener for booking auto-approval settings
+  useEffect(() => {
+    const docRef = doc(db, 'settings', 'bookings');
+    const unsubscribe = onSnapshot(docRef, (snap) => {
+      if (snap.exists()) {
+        setAutoApproveBookingsState(snap.data().autoApprove !== false);
+      } else {
+        setAutoApproveBookingsState(true);
+      }
+    }, (error: any) => {
+      console.error("Auto approve bookings listener error:", error);
+      if (error && error.code === 'permission-denied') {
+        console.warn("Booking settings read permission-denied. Using default value.");
+        setAutoApproveBookingsState(true);
+      } else if (error && error.code === 'not-found') {
+        console.warn("Booking settings not-found. Using default value.");
+        setAutoApproveBookingsState(true);
+      } else {
+        setDbError("Firestore 연결 오류: 자동 승인 설정을 실시간 동기화할 수 없습니다.");
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const setAutoApproveBookings = async (val: boolean) => {
     setAutoApproveBookingsState(val);
     try {
-      localStorage.setItem('dalgeurak_auto_approve_bookings', JSON.stringify(val));
+      await setDoc(doc(db, 'settings', 'bookings'), { autoApprove: val });
     } catch (e) {
-      console.warn("Saving auto_approve_bookings to localStorage failed:", e);
+      console.warn("Failed to update auto_approve_bookings in Firestore:", e);
+      handleFirestoreError(e, OperationType.WRITE, 'settings/bookings');
     }
   };
 
-  // Local storage backup keys
-  const STORAGE_PREFIX = 'dalgeurak_';
-
-  // Helper to load or set LocalStorage
-  function getStorage<T>(key: string, fallback: T): T {
-    try {
-      const item = localStorage.getItem(STORAGE_PREFIX + key);
-      return item ? JSON.parse(item) : fallback;
-    } catch {
-      return fallback;
-    }
-  }
-
-  function setStorage<T>(key: string, value: T): void {
-    try {
-      localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value));
-    } catch (e) {
-      console.warn('LocalStorage error:', e);
-    }
-  }
-
-  // Initialize and Seed Data
+  // Connection Check and Initialization (Real-time single source of truth)
   useEffect(() => {
-    const initializeData = async () => {
+    setFaqs(INITIAL_FAQS);
+
+    const testConnectionAndInit = async () => {
       try {
-        // Load default FAQs
-        setFaqs(INITIAL_FAQS);
-        
-        // Load core entities from firestore or fallback
-        let loadedClasses: WorkshopClass[] = [];
-        let loadedProducts: ProductItem[] = [];
-        let loadedNotices: Notice[] = [];
-        let loadedGallery: GalleryItem[] = [];
-        let loadedReviews: Review[] = [];
-        let loadedBookings: Booking[] = [];
-        let loadedCoupons: Coupon[] = [];
-
-        // Try Firestore first
-        try {
-          // Verify if classes exist, if not seed them
-          const classesCol = collection(db, 'classes');
-          const classesSnapshot = await getDocs(classesCol);
-          if (classesSnapshot.empty) {
-            loadedClasses = [...INITIAL_CLASSES];
-            // Seed classes (silent try-catch to allow guest read access if write fails)
-            try {
-              for (const c of INITIAL_CLASSES) {
-                await setDoc(doc(classesCol, c.id), c);
-              }
-            } catch (e) {
-              console.warn("Guest user lacks Firestore write permission to seed classes. Using local fallback.");
-            }
-          } else {
-            loadedClasses = classesSnapshot.docs.map(doc => doc.data() as WorkshopClass);
-            // Merge INITIAL_CLASSES locally to guarantee latest classes are always available
-            for (const initialClass of INITIAL_CLASSES) {
-              const existingIdx = loadedClasses.findIndex(c => c.id === initialClass.id);
-              if (existingIdx === -1) {
-                loadedClasses.push(initialClass);
-              }
-            }
-          }
-
-          // Products
-          const productsCol = collection(db, 'products');
-          const productsSnapshot = await getDocs(productsCol);
-          if (productsSnapshot.empty) {
-            loadedProducts = [...INITIAL_PRODUCTS];
-            try {
-              for (const p of INITIAL_PRODUCTS) {
-                await setDoc(doc(productsCol, p.id), {
-                  title: p.name,
-                  price: p.price,
-                  image: p.imageUrl,
-                  description: p.description,
-                  category: p.category,
-                  stock: p.stock,
-                  wishlistCount: p.wishlistCount,
-                  isFeatured: p.isFeatured || false,
-                  updatedAt: serverTimestamp()
-                });
-              }
-            } catch (e) {
-              console.warn("Guest lacks write permissions to seed products.");
-            }
-          } else {
-            // Filter out 'prod-free-kit' from Firestore fetched products if any
-            loadedProducts = productsSnapshot.docs
-              .map(doc => {
-                const data = doc.data();
-                return {
-                  id: doc.id,
-                  name: data.title || data.name || '',
-                  price: Number(data.price || 0),
-                  imageUrl: data.image || data.imageUrl || '',
-                  description: data.description || '',
-                  category: data.category || '키링',
-                  stock: Number(data.stock !== undefined ? data.stock : 99),
-                  wishlistCount: Number(data.wishlistCount || 0),
-                  isFeatured: !!(data.isFeatured || false)
-                } as ProductItem;
-              })
-              .filter(p => p.id !== 'prod-free-kit');
-            
-            // Delete 'prod-free-kit' from Firestore to clean up DB
-            try {
-              await deleteDoc(doc(productsCol, 'prod-free-kit'));
-            } catch (e) {
-              // Ignore silently if permission denied or offline
-            }
-
-            for (const initialProduct of INITIAL_PRODUCTS) {
-              const existingIdx = loadedProducts.findIndex(p => p.id === initialProduct.id);
-              if (existingIdx === -1) {
-                loadedProducts.push(initialProduct);
-              }
-            }
-          }
-
-          // Notices
-          const noticesCol = collection(db, 'notices');
-          const noticesSnapshot = await getDocs(noticesCol);
-          if (noticesSnapshot.empty) {
-            loadedNotices = [...INITIAL_NOTICES];
-            try {
-              for (const n of INITIAL_NOTICES) {
-                await setDoc(doc(noticesCol, n.id), n);
-              }
-            } catch (e) {
-              console.warn("Guest lacks write permissions to seed notices.");
-            }
-          } else {
-            loadedNotices = noticesSnapshot.docs.map(doc => doc.data() as Notice);
-          }
-
-          // Gallery
-          const galleryCol = collection(db, 'gallery');
-          const gallerySnapshot = await getDocs(galleryCol);
-          if (gallerySnapshot.empty) {
-            loadedGallery = [...INITIAL_GALLERY];
-            try {
-              for (const g of INITIAL_GALLERY) {
-                await setDoc(doc(galleryCol, g.id), g);
-              }
-            } catch (e) {
-              console.warn("Guest lacks write permissions to seed gallery.");
-            }
-          } else {
-            loadedGallery = gallerySnapshot.docs.map(doc => doc.data() as GalleryItem);
-          }
-
-          // Reviews
-          const reviewsCol = collection(db, 'reviews');
-          const reviewsSnapshot = await getDocs(reviewsCol);
-          if (reviewsSnapshot.empty) {
-            loadedReviews = [...INITIAL_REVIEWS];
-            try {
-              for (const r of INITIAL_REVIEWS) {
-                await setDoc(doc(reviewsCol, r.id), r);
-              }
-            } catch (e) {
-              console.warn("Guest lacks write permissions to seed reviews.");
-            }
-          } else {
-            loadedReviews = reviewsSnapshot.docs.map(doc => doc.data() as Review);
-          }
-
-          // Bookings
-          const bookingsCol = collection(db, 'reservations');
-          const bookingsSnapshot = await getDocs(bookingsCol);
-          loadedBookings = bookingsSnapshot.docs.map(doc => doc.data() as Booking);
-
-          // Coupons
-          const couponsCol = collection(db, 'coupons');
-          const couponsSnapshot = await getDocs(couponsCol);
-          const initialCoupons: Coupon[] = [
-            { id: 'coupon-welcome', code: 'WELCOME10', name: '가입 환영 10% 쿠폰', discountType: 'percent', discountValue: 10, description: '전체 클래스 10% 예약 할인', expiryDate: '2026-12-31', status: 'active' },
-            { id: 'coupon-opening', code: 'DALGEURAK3000', name: '정식 오픈 3천원 할인권', discountType: 'amount', discountValue: 3000, description: '체험 예약 시 즉시 3,000원 할인', expiryDate: '2026-09-30', status: 'active' },
-            { id: 'coupon-free-event', code: 'FREE100', name: '오픈 기념 100% 무료 체험 쿠폰', discountType: 'percent', discountValue: 100, description: '원하는 클래스 100% 무료 예약 가능!', expiryDate: '2026-12-31', status: 'active' }
-          ];
-          if (couponsSnapshot.empty) {
-            loadedCoupons = initialCoupons;
-            try {
-              for (const cp of initialCoupons) {
-                await setDoc(doc(couponsCol, cp.id), cp);
-              }
-            } catch (e) {
-              console.warn("Guest lacks write permissions to seed coupons.");
-            }
-          } else {
-            loadedCoupons = couponsSnapshot.docs.map(doc => doc.data() as Coupon);
-            // Make sure FREE100 always exists locally
-            if (!loadedCoupons.some(c => c.id === 'coupon-free-event')) {
-              loadedCoupons.push(initialCoupons[2]);
-            }
-          }
-
-        } catch (fsError) {
-          console.warn("Firestore seeding/loading failed or offline, falling back to LocalStorage:", fsError);
-          // Load from LocalStorage or fallback to seed
-          loadedClasses = getStorage<WorkshopClass[]>('classes', INITIAL_CLASSES);
-          for (const initialClass of INITIAL_CLASSES) {
-            const existingIdx = loadedClasses.findIndex(c => c.id === initialClass.id);
-            if (existingIdx === -1) {
-              loadedClasses.push(initialClass);
-            } else {
-              const existing = loadedClasses[existingIdx];
-              if (existing.imageUrl.includes('photo-1513519245088')) {
-                loadedClasses[existingIdx] = initialClass;
-              }
-            }
-          }
-
-          loadedProducts = getStorage<ProductItem[]>('products', INITIAL_PRODUCTS).filter(p => p.id !== 'prod-free-kit');
-          for (const initialProduct of INITIAL_PRODUCTS) {
-            const existingIdx = loadedProducts.findIndex(p => p.id === initialProduct.id);
-            if (existingIdx === -1) {
-              loadedProducts.push(initialProduct);
-            } else {
-              const existing = loadedProducts[existingIdx];
-              if (existing.imageUrl.includes('photo-1513519245088')) {
-                loadedProducts[existingIdx] = initialProduct;
-              }
-            }
-          }
-          loadedNotices = getStorage<Notice[]>('notices', INITIAL_NOTICES);
-          loadedGallery = getStorage<GalleryItem[]>('gallery', INITIAL_GALLERY);
-          loadedReviews = getStorage<Review[]>('reviews', INITIAL_REVIEWS);
-          loadedBookings = getStorage<Booking[]>('reservations', []);
-          loadedCoupons = getStorage<Coupon[]>('coupons', [
-            { id: 'coupon-welcome', code: 'WELCOME10', name: '가입 환영 10% 쿠폰', discountType: 'percent', discountValue: 10, description: '전체 클래스 10% 예약 할인', expiryDate: '2026-12-31', status: 'active' },
-            { id: 'coupon-opening', code: 'DALGEURAK3000', name: '정식 오픈 3천원 할인권', discountType: 'amount', discountValue: 3000, description: '체험 예약 시 즉시 3,000원 할인', expiryDate: '2026-09-30', status: 'active' },
-            { id: 'coupon-free-event', code: 'FREE100', name: '오픈 기념 100% 무료 체험 쿠폰', discountType: 'percent', discountValue: 100, description: '원하는 클래스 100% 무료 예약 가능!', expiryDate: '2026-12-31', status: 'active' }
-          ]);
+        // Test Firestore connection first using getDocFromServer
+        await getDocFromServer(doc(db, 'settings', 'connection_test'));
+        setDbError(null);
+      } catch (error: any) {
+        console.error("Firestore connection test failed. Actual error:", error);
+        if (error && error.code === 'permission-denied') {
+          console.warn("Connection test failed with permission-denied. This is normal if settings are restricted. Continuing initialization.");
+          setDbError(null);
+        } else if (error && error.code === 'not-found') {
+          console.warn("Connection test failed with not-found. This is normal for empty/new database setup. Continuing initialization.");
+          setDbError(null);
+        } else {
+          setDbError("달그락 상점 데이터베이스에 일시적으로 연결할 수 없습니다. 네트워크 연결 상태를 확인해주세요.");
         }
-
-        // Apply sorted states
-        setClasses(loadedClasses);
-        setProducts(loadedProducts);
-        setNotices(loadedNotices.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-        setGallery(loadedGallery.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-        setReviews(loadedReviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-        setBookings(loadedBookings.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-        setCoupons(loadedCoupons);
-
-        // Load Telegram settings
-        try {
-          const telegramSnap = await getDoc(doc(db, 'settings', 'telegram'));
-          if (telegramSnap.exists()) {
-            setTelegramConfig(telegramSnap.data() as any);
-          } else {
-            const envToken = (import.meta as any).env.VITE_TELEGRAM_BOT_TOKEN || '';
-            const envChatId = (import.meta as any).env.VITE_TELEGRAM_CHAT_ID || '';
-            const isEnvEnabled = !!(envToken && envChatId);
-            setTelegramConfig({
-              botToken: envToken,
-              chatId: envChatId,
-              isEnabled: isEnvEnabled
-            });
-          }
-        } catch (e) {
-          console.warn("Failed to load telegram config from firestore:", e);
-          const envToken = (import.meta as any).env.VITE_TELEGRAM_BOT_TOKEN || '';
-          const envChatId = (import.meta as any).env.VITE_TELEGRAM_CHAT_ID || '';
-          setTelegramConfig({
-            botToken: getStorage<string>('telegram_token', envToken),
-            chatId: getStorage<string>('telegram_chat_id', envChatId),
-            isEnabled: getStorage<boolean>('telegram_enabled', !!(envToken && envChatId))
-          });
-        }
-
-        // Load Home hero image settings
-        try {
-          const homeSnap = await getDoc(doc(db, 'settings', 'home'));
-          if (homeSnap.exists()) {
-            setHomeHeroImage(homeSnap.data().heroImageUrl || '');
-          } else {
-            setHomeHeroImage('');
-          }
-        } catch (e) {
-          console.warn("Failed to load home config from firestore:", e);
-          setHomeHeroImage(getStorage<string>('home_hero_image', ''));
-        }
-
-      } catch (err) {
-        console.error("Critical initialization failure:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
-    initializeData();
+    testConnectionAndInit();
+  }, []);
+
+  // 1. Classes real-time subscription
+  useEffect(() => {
+    const classesCol = collection(db, 'classes');
+    const unsubscribe = onSnapshot(classesCol, async (snapshot) => {
+      if (snapshot.empty) {
+        // Seed initial classes silently
+        try {
+          for (const c of INITIAL_CLASSES) {
+            await setDoc(doc(classesCol, c.id), c);
+          }
+        } catch (e) {
+          console.warn("Lacks permissions to seed classes, using default in-memory list:", e);
+        }
+        setClasses(INITIAL_CLASSES);
+      } else {
+        let loadedClasses = snapshot.docs.map(doc => doc.data() as WorkshopClass);
+        // Merge INITIAL_CLASSES locally to guarantee latest classes are always available
+        for (const initialClass of INITIAL_CLASSES) {
+          const existingIdx = loadedClasses.findIndex(c => c.id === initialClass.id);
+          if (existingIdx === -1) {
+            loadedClasses.push(initialClass);
+          }
+        }
+        setClasses(loadedClasses);
+      }
+    }, (error: any) => {
+      console.error("Classes real-time subscription failed. Actual error:", error);
+      if (error && error.code === 'permission-denied') {
+        console.warn("Classes read permission-denied. Using in-memory fallback.");
+        setClasses(INITIAL_CLASSES);
+      } else if (error && error.code === 'not-found') {
+        console.warn("Classes collection not-found. Using in-memory fallback.");
+        setClasses(INITIAL_CLASSES);
+      } else {
+        setDbError("Firestore 연결 오류: 클래스 목록을 실시간 동기화할 수 없습니다.");
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // 2. Products real-time subscription
+  useEffect(() => {
+    const productsCol = collection(db, 'products');
+    const unsubscribe = onSnapshot(productsCol, async (snapshot) => {
+      if (snapshot.empty) {
+        // Seed initial products silently
+        try {
+          for (const p of INITIAL_PRODUCTS) {
+            await setDoc(doc(productsCol, p.id), {
+              title: p.name,
+              price: p.price,
+              image: p.imageUrl,
+              description: p.description,
+              category: p.category,
+              stock: p.stock,
+              wishlistCount: p.wishlistCount,
+              isFeatured: p.isFeatured || false,
+              updatedAt: serverTimestamp()
+            });
+          }
+        } catch (e) {
+          console.warn("Lacks permissions to seed products, using default in-memory list:", e);
+        }
+        setProducts(INITIAL_PRODUCTS);
+      } else {
+        let loadedProducts = snapshot.docs
+          .map(doc => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              name: data.title || data.name || '',
+              price: Number(data.price || 0),
+              imageUrl: data.image || data.imageUrl || '',
+              description: data.description || '',
+              category: data.category || '키링',
+              stock: Number(data.stock !== undefined ? data.stock : 99),
+              wishlistCount: Number(data.wishlistCount || 0),
+              isFeatured: !!(data.isFeatured || false)
+            } as ProductItem;
+          })
+          .filter(p => p.id !== 'prod-free-kit');
+
+        // Delete 'prod-free-kit' from Firestore to clean up DB
+        try {
+          await deleteDoc(doc(productsCol, 'prod-free-kit'));
+        } catch (e) {
+          // Ignore silently
+        }
+
+        for (const initialProduct of INITIAL_PRODUCTS) {
+          const existingIdx = loadedProducts.findIndex(p => p.id === initialProduct.id);
+          if (existingIdx === -1) {
+            loadedProducts.push(initialProduct);
+          }
+        }
+        setProducts(loadedProducts);
+      }
+    }, (error: any) => {
+      console.error("Products real-time subscription failed. Actual error:", error);
+      if (error && error.code === 'permission-denied') {
+        console.warn("Products read permission-denied. Using in-memory fallback.");
+        setProducts(INITIAL_PRODUCTS);
+      } else if (error && error.code === 'not-found') {
+        console.warn("Products collection not-found. Using in-memory fallback.");
+        setProducts(INITIAL_PRODUCTS);
+      } else {
+        setDbError("Firestore 연결 오류: 상품 목록을 실시간 동기화할 수 없습니다.");
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // 3. Notices real-time subscription
+  useEffect(() => {
+    const noticesCol = collection(db, 'notices');
+    const unsubscribe = onSnapshot(noticesCol, async (snapshot) => {
+      if (snapshot.empty) {
+        try {
+          for (const n of INITIAL_NOTICES) {
+            await setDoc(doc(noticesCol, n.id), n);
+          }
+        } catch (e) {
+          console.warn("Lacks permissions to seed notices:", e);
+        }
+        setNotices(INITIAL_NOTICES);
+      } else {
+        const loadedNotices = snapshot.docs.map(doc => doc.data() as Notice);
+        setNotices(loadedNotices.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+      }
+    }, (error: any) => {
+      console.error("Notices real-time subscription failed. Actual error:", error);
+      if (error && error.code === 'permission-denied') {
+        console.warn("Notices read permission-denied. Using in-memory fallback.");
+        setNotices(INITIAL_NOTICES);
+      } else if (error && error.code === 'not-found') {
+        console.warn("Notices collection not-found. Using in-memory fallback.");
+        setNotices(INITIAL_NOTICES);
+      } else {
+        setDbError("Firestore 연결 오류: 공지사항을 실시간 동기화할 수 없습니다.");
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // 4. Gallery real-time subscription
+  useEffect(() => {
+    const galleryCol = collection(db, 'gallery');
+    const unsubscribe = onSnapshot(galleryCol, async (snapshot) => {
+      if (snapshot.empty) {
+        try {
+          for (const g of INITIAL_GALLERY) {
+            await setDoc(doc(galleryCol, g.id), g);
+          }
+        } catch (e) {
+          console.warn("Lacks permissions to seed gallery:", e);
+        }
+        setGallery(INITIAL_GALLERY);
+      } else {
+        const loadedGallery = snapshot.docs.map(doc => doc.data() as GalleryItem);
+        setGallery(loadedGallery.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+      }
+    }, (error: any) => {
+      console.error("Gallery real-time subscription failed. Actual error:", error);
+      if (error && error.code === 'permission-denied') {
+        console.warn("Gallery read permission-denied. Using in-memory fallback.");
+        setGallery(INITIAL_GALLERY);
+      } else if (error && error.code === 'not-found') {
+        console.warn("Gallery collection not-found. Using in-memory fallback.");
+        setGallery(INITIAL_GALLERY);
+      } else {
+        setDbError("Firestore 연결 오류: 갤러리를 실시간 동기화할 수 없습니다.");
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // 5. Reviews real-time subscription
+  useEffect(() => {
+    const reviewsCol = collection(db, 'reviews');
+    const unsubscribe = onSnapshot(reviewsCol, async (snapshot) => {
+      if (snapshot.empty) {
+        try {
+          for (const r of INITIAL_REVIEWS) {
+            await setDoc(doc(reviewsCol, r.id), r);
+          }
+        } catch (e) {
+          console.warn("Lacks permissions to seed reviews:", e);
+        }
+        setReviews(INITIAL_REVIEWS);
+      } else {
+        const loadedReviews = snapshot.docs.map(doc => doc.data() as Review);
+        setReviews(loadedReviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+      }
+    }, (error: any) => {
+      console.error("Reviews real-time subscription failed. Actual error:", error);
+      if (error && error.code === 'permission-denied') {
+        console.warn("Reviews read permission-denied. Using in-memory fallback.");
+        setReviews(INITIAL_REVIEWS);
+      } else if (error && error.code === 'not-found') {
+        console.warn("Reviews collection not-found. Using in-memory fallback.");
+        setReviews(INITIAL_REVIEWS);
+      } else {
+        setDbError("Firestore 연결 오류: 리뷰 목록을 실시간 동기화할 수 없습니다.");
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // 6. Bookings (reservations) real-time subscription
+  useEffect(() => {
+    const bookingsCol = collection(db, 'reservations');
+    const unsubscribe = onSnapshot(bookingsCol, (snapshot) => {
+      const loadedBookings = snapshot.docs.map(doc => doc.data() as Booking);
+      setBookings(loadedBookings.sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      }));
+    }, (error: any) => {
+      console.error("Bookings real-time subscription failed. Actual error:", error);
+      if (error && error.code === 'permission-denied') {
+        console.warn("Bookings read permission-denied. Empty fallback list used.");
+        setBookings([]);
+      } else if (error && error.code === 'not-found') {
+        console.warn("Bookings collection not-found. Empty fallback list used.");
+        setBookings([]);
+      } else {
+        setDbError("Firestore 연결 오류: 예약 목록을 실시간 동기화할 수 없습니다.");
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // 7. Coupons real-time subscription
+  useEffect(() => {
+    const couponsCol = collection(db, 'coupons');
+    const unsubscribe = onSnapshot(couponsCol, async (snapshot) => {
+      const initialCoupons: Coupon[] = [
+        { id: 'coupon-welcome', code: 'WELCOME10', name: '가입 환영 10% 쿠폰', discountType: 'percent', discountValue: 10, description: '전체 클래스 10% 예약 할인', expiryDate: '2026-12-31', status: 'active' },
+        { id: 'coupon-opening', code: 'DALGEURAK3000', name: '정식 오픈 3천원 할인권', discountType: 'amount', discountValue: 3000, description: '체험 예약 시 즉시 3,000원 할인', expiryDate: '2026-09-30', status: 'active' },
+        { id: 'coupon-free-event', code: 'FREE100', name: '오픈 기념 100% 무료 체험 쿠폰', discountType: 'percent', discountValue: 100, description: '원하는 클래스 100% 무료 예약 가능!', expiryDate: '2026-12-31', status: 'active' }
+      ];
+      if (snapshot.empty) {
+        try {
+          for (const cp of initialCoupons) {
+            await setDoc(doc(couponsCol, cp.id), cp);
+          }
+        } catch (e) {
+          console.warn("Lacks permissions to seed coupons:", e);
+        }
+        setCoupons(initialCoupons);
+      } else {
+        let loadedCoupons = snapshot.docs.map(doc => doc.data() as Coupon);
+        if (!loadedCoupons.some(c => c.id === 'coupon-free-event')) {
+          loadedCoupons.push(initialCoupons[2]);
+        }
+        setCoupons(loadedCoupons);
+      }
+    }, (error: any) => {
+      console.error("Coupons real-time subscription failed. Actual error:", error);
+      const initialCoupons: Coupon[] = [
+        { id: 'coupon-welcome', code: 'WELCOME10', name: '가입 환영 10% 쿠폰', discountType: 'percent', discountValue: 10, description: '전체 클래스 10% 예약 할인', expiryDate: '2026-12-31', status: 'active' },
+        { id: 'coupon-opening', code: 'DALGEURAK3000', name: '정식 오픈 3천원 할인권', discountType: 'amount', discountValue: 3000, description: '체험 예약 시 즉시 3,000원 할인', expiryDate: '2026-09-30', status: 'active' },
+        { id: 'coupon-free-event', code: 'FREE100', name: '오픈 기념 100% 무료 체험 쿠폰', discountType: 'percent', discountValue: 100, description: '원하는 클래스 100% 무료 예약 가능!', expiryDate: '2026-12-31', status: 'active' }
+      ];
+      if (error && error.code === 'permission-denied') {
+        console.warn("Coupons read permission-denied. Using local fallback.");
+        setCoupons(initialCoupons);
+      } else if (error && error.code === 'not-found') {
+        console.warn("Coupons collection not-found. Using local fallback.");
+        setCoupons(initialCoupons);
+      } else {
+        setDbError("Firestore 연결 오류: 쿠폰 목록을 실시간 동기화할 수 없습니다.");
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // 8. Telegram config real-time subscription
+  useEffect(() => {
+    const docRef = doc(db, 'settings', 'telegram');
+    const unsubscribe = onSnapshot(docRef, (snap) => {
+      if (snap.exists()) {
+        setTelegramConfig(snap.data() as any);
+      } else {
+        const envToken = (import.meta as any).env.VITE_TELEGRAM_BOT_TOKEN || '';
+        const envChatId = (import.meta as any).env.VITE_TELEGRAM_CHAT_ID || '';
+        const isEnvEnabled = !!(envToken && envChatId);
+        setTelegramConfig({
+          botToken: envToken,
+          chatId: envChatId,
+          isEnabled: isEnvEnabled
+        });
+      }
+    }, (error: any) => {
+      console.error("Telegram config real-time subscription failed. Actual error:", error);
+      const envToken = (import.meta as any).env.VITE_TELEGRAM_BOT_TOKEN || '';
+      const envChatId = (import.meta as any).env.VITE_TELEGRAM_CHAT_ID || '';
+      const isEnvEnabled = !!(envToken && envChatId);
+      if (error && error.code === 'permission-denied') {
+        console.warn("Telegram config read permission-denied. Using default fallback.");
+        setTelegramConfig({
+          botToken: envToken,
+          chatId: envChatId,
+          isEnabled: isEnvEnabled
+        });
+      } else if (error && error.code === 'not-found') {
+        console.warn("Telegram config not-found. Using default fallback.");
+        setTelegramConfig({
+          botToken: envToken,
+          chatId: envChatId,
+          isEnabled: isEnvEnabled
+        });
+      } else {
+        setDbError("Firestore 연결 오류: 알림 설정을 실시간 동기화할 수 없습니다.");
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // 9. Home config real-time subscription
+  useEffect(() => {
+    const docRef = doc(db, 'settings', 'home');
+    const unsubscribe = onSnapshot(docRef, (snap) => {
+      if (snap.exists()) {
+        setHomeHeroImage(snap.data().heroImageUrl || 'https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&q=80&w=1600');
+      } else {
+        setHomeHeroImage('https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&q=80&w=1600');
+      }
+    }, (error: any) => {
+      console.error("Home config real-time subscription failed. Actual error:", error);
+      if (error && error.code === 'permission-denied') {
+        console.warn("Home config read permission-denied. Using cloud sky fallback image.");
+        setHomeHeroImage('https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&q=80&w=1600');
+      } else if (error && error.code === 'not-found') {
+        console.warn("Home config not-found. Using cloud sky fallback image.");
+        setHomeHeroImage('https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&q=80&w=1600');
+      } else {
+        setDbError("Firestore 연결 오류: 홈 설정을 실시간 동기화할 수 없습니다.");
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
   // Monitor Authentication State
@@ -583,36 +694,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .filter(p => p.id !== 'prod-free-kit');
       
       setProducts(loadedProducts);
-    }, (error) => {
-      // Catch permission denied or other errors and report context
-      handleFirestoreError(error, OperationType.GET, 'products');
+    }, (error: any) => {
+      console.error("Products real-time subscriber error:", error);
+      if (error && error.code === 'permission-denied') {
+        console.warn("Products read permission-denied in secondary subscriber.");
+      } else if (error && error.code === 'not-found') {
+        console.warn("Products collection not-found in secondary subscriber.");
+      } else {
+        setDbError("Firestore 연결 오류: 상품 목록을 실시간 동기화할 수 없습니다.");
+      }
     });
 
     return () => unsubscribe();
   }, []);
 
-  // Synchronize local fallback storage whenever states change
-  useEffect(() => {
-    if (classes.length > 0) setStorage('classes', classes);
-  }, [classes]);
-  useEffect(() => {
-    if (products.length > 0) setStorage('products', products);
-  }, [products]);
-  useEffect(() => {
-    if (bookings.length > 0) setStorage('reservations', bookings);
-  }, [bookings]);
-  useEffect(() => {
-    if (reviews.length > 0) setStorage('reviews', reviews);
-  }, [reviews]);
-  useEffect(() => {
-    if (gallery.length > 0) setStorage('gallery', gallery);
-  }, [gallery]);
-  useEffect(() => {
-    if (notices.length > 0) setStorage('notices', notices);
-  }, [notices]);
-  useEffect(() => {
-    if (coupons.length > 0) setStorage('coupons', coupons);
-  }, [coupons]);
+
 
   // Auth Action: Log in with email
   const loginWithEmail = async (email: string, password: string): Promise<UserProfile> => {
@@ -823,9 +919,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const updateTelegramConfig = async (config: { botToken: string; chatId: string; isEnabled: boolean }) => {
     setTelegramConfig(config);
-    setStorage('telegram_token', config.botToken);
-    setStorage('telegram_chat_id', config.chatId);
-    setStorage('telegram_enabled', config.isEnabled);
     try {
       await setDoc(doc(db, 'settings', 'telegram'), config);
     } catch (e) {
@@ -835,7 +928,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const updateHomeHeroImage = async (url: string) => {
     setHomeHeroImage(url);
-    setStorage('home_hero_image', url);
     try {
       await setDoc(doc(db, 'settings', 'home'), { heroImageUrl: url });
     } catch (e) {
@@ -1383,12 +1475,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       // Force set local state to clean initial copy
       setClasses([...INITIAL_CLASSES]);
-      setStorage<WorkshopClass[]>('classes', INITIAL_CLASSES);
     } catch (err) {
       console.error("Recreate classes failed:", err);
-      // Local fallback
       setClasses([...INITIAL_CLASSES]);
-      setStorage<WorkshopClass[]>('classes', INITIAL_CLASSES);
       throw err;
     }
   };
@@ -1397,6 +1486,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     <AppContext.Provider value={{
       currentUser,
       loading,
+      dbError,
+      setDbError,
       classes,
       products,
       bookings,
