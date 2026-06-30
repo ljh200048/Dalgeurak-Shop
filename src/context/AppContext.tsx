@@ -328,27 +328,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           // Load from LocalStorage or fallback to seed
           loadedClasses = getStorage<WorkshopClass[]>('classes', INITIAL_CLASSES);
           for (const initialClass of INITIAL_CLASSES) {
-            const existingIdx = loadedClasses.findIndex(c => c.id === initialClass.id);
-            if (existingIdx === -1) {
+            if (!loadedClasses.some(c => c.id === initialClass.id)) {
               loadedClasses.push(initialClass);
-            } else {
-              const existing = loadedClasses[existingIdx];
-              if (existing.imageUrl.includes('photo-1513519245088') || existing.imageUrl !== initialClass.imageUrl) {
-                loadedClasses[existingIdx] = initialClass;
-              }
             }
           }
 
           loadedProducts = getStorage<ProductItem[]>('products', INITIAL_PRODUCTS);
           for (const initialProduct of INITIAL_PRODUCTS) {
-            const existingIdx = loadedProducts.findIndex(p => p.id === initialProduct.id);
-            if (existingIdx === -1) {
+            if (!loadedProducts.some(p => p.id === initialProduct.id)) {
               loadedProducts.push(initialProduct);
-            } else {
-              const existing = loadedProducts[existingIdx];
-              if (existing.imageUrl.includes('photo-1513519245088') || existing.imageUrl !== initialProduct.imageUrl) {
-                loadedProducts[existingIdx] = initialProduct;
-              }
             }
           }
           loadedNotices = getStorage<Notice[]>('notices', INITIAL_NOTICES);
