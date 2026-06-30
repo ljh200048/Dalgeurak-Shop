@@ -229,7 +229,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               console.warn("Guest lacks write permissions to seed products.");
             }
           } else {
-            loadedProducts = productsSnapshot.docs.map(doc => doc.data() as ProductItem);
+            // Filter out 'prod-free-kit' from Firestore fetched products if any
+            loadedProducts = productsSnapshot.docs
+              .map(doc => doc.data() as ProductItem)
+              .filter(p => p.id !== 'prod-free-kit');
+            
+            // Delete 'prod-free-kit' from Firestore to clean up DB
+            try {
+              await deleteDoc(doc(productsCol, 'prod-free-kit'));
+            } catch (e) {
+              // Ignore silently if permission denied or offline
+            }
+
             for (const initialProduct of INITIAL_PRODUCTS) {
               const existingIdx = loadedProducts.findIndex(p => p.id === initialProduct.id);
               if (existingIdx === -1) {
@@ -332,7 +343,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             }
           }
 
-          loadedProducts = getStorage<ProductItem[]>('products', INITIAL_PRODUCTS);
+          loadedProducts = getStorage<ProductItem[]>('products', INITIAL_PRODUCTS).filter(p => p.id !== 'prod-free-kit');
           for (const initialProduct of INITIAL_PRODUCTS) {
             const existingIdx = loadedProducts.findIndex(p => p.id === initialProduct.id);
             if (existingIdx === -1) {

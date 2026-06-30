@@ -364,17 +364,6 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     stock: 150,
     wishlistCount: 412,
     isFeatured: false
-  },
-  {
-    id: 'prod-free-kit',
-    name: '달그락 키트 체험 클래스 상품',
-    price: 0,
-    imageUrl: 'https://images.unsplash.com/photo-1607344645866-009c320c5ab8?auto=format&fit=crop&q=80&w=600',
-    description: '달그락 키트 무료체험 클래스에서 사용하는 DIY 시그니처 소품 가공 체험 패키지 키트 상품',
-    category: '키링',
-    stock: 999,
-    wishlistCount: 520,
-    isFeatured: true
   }
 ];
 
