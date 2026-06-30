@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
-import { WorkshopClass, Booking, Notice, Review } from '../types';
+import { WorkshopClass, Booking, Notice, Review, ProductItem } from '../types';
 import { 
   TrendingUp, 
   Users, 
@@ -24,12 +24,16 @@ import { motion, AnimatePresence } from 'motion/react';
 export default function AdminDashboardView() {
   const { 
     classes, 
+    products,
     bookings, 
     reviews, 
     notices, 
     adminAddClass, 
     adminUpdateClass, 
     adminDeleteClass, 
+    adminAddProduct,
+    adminUpdateProduct,
+    adminDeleteProduct,
     adminApproveBooking, 
     adminAttendBooking, 
     adminCancelBooking, 
@@ -41,7 +45,7 @@ export default function AdminDashboardView() {
     updateTelegramConfig
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'stats' | 'classes' | 'bookings' | 'notices' | 'reviews' | 'telegram'>('stats');
+  const [activeTab, setActiveTab] = useState<'stats' | 'classes' | 'products' | 'bookings' | 'notices' | 'reviews' | 'telegram'>('stats');
 
   // Telegram Integration local states
   const [telegramBotToken, setTelegramBotToken] = useState(telegramConfig.botToken || '');
@@ -70,6 +74,17 @@ export default function AdminDashboardView() {
   const [classMaxPeople, setClassMaxPeople] = useState(6);
   const [classImageUrl, setClassImageUrl] = useState('https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&q=80&w=600');
   const [classIsFreeTrial, setClassIsFreeTrial] = useState(false);
+
+  // New Product states
+  const [productFormOpen, setProductFormOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null);
+  const [productName, setProductName] = useState('');
+  const [productPrice, setProductPrice] = useState(15000);
+  const [productCategory, setProductCategory] = useState<ProductItem['category']>('키링');
+  const [productDesc, setProductDesc] = useState('');
+  const [productImageUrl, setProductImageUrl] = useState('https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&q=80&w=600');
+  const [productStock, setProductStock] = useState(10);
+  const [productIsFeatured, setProductIsFeatured] = useState(false);
 
   // New Notice state
   const [noticeTitle, setNoticeTitle] = useState('');
@@ -178,6 +193,66 @@ export default function AdminDashboardView() {
     }
   };
 
+  // Handle Product Create or Update
+  const handleProductSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!productName.trim() || !productDesc.trim()) {
+      alert('모든 필수 필드를 입력해주세요.');
+      return;
+    }
+
+    const productPayload = {
+      name: productName,
+      price: productPrice,
+      imageUrl: productImageUrl,
+      description: productDesc,
+      category: productCategory,
+      stock: productStock,
+      isFeatured: productIsFeatured
+    };
+
+    try {
+      if (editingProduct) {
+        await adminUpdateProduct(editingProduct.id, productPayload);
+        alert('상품 정보가 성공적으로 변경되었습니다.');
+      } else {
+        await adminAddProduct(productPayload);
+        alert('신규 상품이 성공적으로 등록되었습니다.');
+      }
+      
+      // Reset Form
+      setProductFormOpen(false);
+      setEditingProduct(null);
+      setProductName('');
+      setProductDesc('');
+      setProductPrice(15000);
+      setProductCategory('키링');
+      setProductImageUrl('https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&q=80&w=600');
+      setProductStock(10);
+      setProductIsFeatured(false);
+    } catch {
+      alert('작업 처리 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleEditProductClick = (prod: ProductItem) => {
+    setEditingProduct(prod);
+    setProductName(prod.name);
+    setProductDesc(prod.description);
+    setProductPrice(prod.price);
+    setProductCategory(prod.category);
+    setProductImageUrl(prod.imageUrl);
+    setProductStock(prod.stock);
+    setProductIsFeatured(prod.isFeatured || false);
+    setProductFormOpen(true);
+  };
+
+  const handleDeleteProductClick = async (id: string) => {
+    if (confirm('이 굿즈 상품을 완전히 삭제하시겠습니까?')) {
+      await adminDeleteProduct(id);
+    }
+  };
+
   const handleRecreateAll = async () => {
     if (confirm('모든 클래스를 공방 초기 상태 데이터(10종 및 무료체험 3종)로 완전히 복원하고, 다른 커스텀 등록 클래스는 삭제하시겠습니까?')) {
       setIsRecreating(true);
@@ -276,6 +351,7 @@ export default function AdminDashboardView() {
         {[
           { id: 'stats', label: '📊 종합 분석 대시보드' },
           { id: 'classes', label: '🎨 클래스 상품 관리' },
+          { id: 'products', label: '🛍 굿즈 상품 관리' },
           { id: 'bookings', label: '📅 수강 예약 승인/출석' },
           { id: 'notices', label: '📢 공지 & 배너 작성' },
           { id: 'reviews', label: '⭐ 수강 후기 모니터링' },
@@ -516,6 +592,34 @@ export default function AdminDashboardView() {
                 </div>
 
                 <div className="space-y-1 text-xs">
+                  <label className="font-bold text-gray-400">클래스 대표 이미지 URL</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="이미지 주소를 입력하세요 (예: https://images.unsplash.com/...)" 
+                      value={classImageUrl}
+                      onChange={(e) => setClassImageUrl(e.target.value)}
+                      className="flex-1 p-2 border rounded-lg bg-[#FFFDF9] dark:bg-[#1F1B18]"
+                    />
+                    {classImageUrl && (
+                      <img 
+                        src={classImageUrl} 
+                        alt="미리보기" 
+                        className="w-10 h-10 rounded-lg object-cover border border-gray-200"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&q=80&w=600';
+                        }}
+                        referrerPolicy="no-referrer"
+                      />
+                    )}
+                  </div>
+                  <p className="text-[10px] text-gray-400">
+                    Unsplash 등 무료 이미지 주소를 넣으시면 클래스 카드 디자인에 반영됩니다.
+                  </p>
+                </div>
+
+                <div className="space-y-1 text-xs">
                   <label className="font-bold text-gray-400">클래스 상세 소개</label>
                   <textarea 
                     rows={3}
@@ -570,6 +674,200 @@ export default function AdminDashboardView() {
                       onClick={() => handleDeleteClassClick(c.id)}
                       className="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-500 border border-rose-100 cursor-pointer"
                       title="클래스 삭제"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB: products (굿즈 상품 관리) */}
+        {activeTab === 'products' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center flex-wrap gap-4">
+              <h3 className="font-serif font-bold text-base text-[#2E2A27]">공방 굿즈 상품 목록 ({products.length}종)</h3>
+              <button
+                onClick={() => { 
+                  setEditingProduct(null); 
+                  setProductName('');
+                  setProductDesc('');
+                  setProductPrice(15000);
+                  setProductCategory('키링');
+                  setProductImageUrl('https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&q=80&w=600');
+                  setProductStock(10);
+                  setProductIsFeatured(false);
+                  setProductFormOpen(true); 
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#C98C63] text-white text-xs font-bold rounded-full cursor-pointer focus:outline-none"
+              >
+                <Plus className="w-3.5 h-3.5" /> 신규 굿즈 상품 등록
+              </button>
+            </div>
+
+            {/* Product Form dialog */}
+            {productFormOpen && (
+              <form onSubmit={handleProductSubmit} className="bg-white dark:bg-[#2E2A27] border border-[#C98C63]/40 p-6 rounded-2xl space-y-4 shadow-sm max-w-2xl">
+                <h4 className="font-serif font-bold text-sm text-[#C98C63]">
+                  {editingProduct ? '🛍 굿즈 상품 정보 변경' : '🛍 신규 굿즈 상품 등록'}
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div className="space-y-1">
+                    <label className="font-bold text-gray-400">상품 이름</label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="예시: 감성 도자기 수제 머그컵" 
+                      value={productName}
+                      onChange={(e) => setProductName(e.target.value)}
+                      className="w-full p-2 border rounded-lg bg-[#FFFDF9] dark:bg-[#1F1B18]"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-gray-400">카테고리 구분</label>
+                    <select
+                      value={productCategory}
+                      onChange={(e) => setProductCategory(e.target.value as any)}
+                      className="w-full p-2 border rounded-lg bg-[#FFFDF9] dark:bg-[#1F1B18] font-bold text-[#C98C63]"
+                    >
+                      <option value="키링">키링</option>
+                      <option value="스티커">스티커</option>
+                      <option value="캔들">캔들</option>
+                      <option value="디퓨저">디퓨저</option>
+                      <option value="에코백">에코백</option>
+                      <option value="엽서">엽서</option>
+                      <option value="머그컵">머그컵</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-gray-400">판매 금액 (원)</label>
+                    <input 
+                      type="number" 
+                      required
+                      placeholder="판매 금액을 입력해주세요"
+                      value={productPrice}
+                      onChange={(e) => setProductPrice(Number(e.target.value))}
+                      className="w-full p-2 border rounded-lg bg-[#FFFDF9] dark:bg-[#1F1B18]"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-gray-400">재고 수량 (개)</label>
+                    <input 
+                      type="number" 
+                      required
+                      placeholder="재고를 입력해주세요"
+                      value={productStock}
+                      onChange={(e) => setProductStock(Number(e.target.value))}
+                      className="w-full p-2 border rounded-lg bg-[#FFFDF9] dark:bg-[#1F1B18]"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1 text-xs">
+                  <label className="font-bold text-gray-400">굿즈 대표 이미지 URL</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="이미지 주소를 입력하세요 (예: https://images.unsplash.com/...)" 
+                      value={productImageUrl}
+                      onChange={(e) => setProductImageUrl(e.target.value)}
+                      className="flex-1 p-2 border rounded-lg bg-[#FFFDF9] dark:bg-[#1F1B18]"
+                    />
+                    {productImageUrl && (
+                      <img 
+                        src={productImageUrl} 
+                        alt="미리보기" 
+                        className="w-10 h-10 rounded-lg object-cover border border-gray-200"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&q=80&w=600';
+                        }}
+                        referrerPolicy="no-referrer"
+                      />
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 text-xs">
+                  <input 
+                    type="checkbox" 
+                    id="productIsFeatured" 
+                    checked={productIsFeatured}
+                    onChange={(e) => setProductIsFeatured(e.target.checked)}
+                    className="rounded border-[#C98C63] text-[#C98C63] focus:ring-[#C98C63]"
+                  />
+                  <label htmlFor="productIsFeatured" className="font-bold text-gray-600 dark:text-gray-300 cursor-pointer">이 상품을 추천 굿즈로 등록하기</label>
+                </div>
+
+                <div className="space-y-1 text-xs">
+                  <label className="font-bold text-gray-400">상품 상세 설명</label>
+                  <textarea 
+                    rows={2}
+                    placeholder="소비자들에게 다가갈 세부 수공예 특징을 적어주세요..."
+                    value={productDesc}
+                    onChange={(e) => setProductDesc(e.target.value)}
+                    className="w-full p-2 border rounded-lg bg-[#FFFDF9] dark:bg-[#1F1B18]"
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <button type="submit" className="px-5 py-2 rounded-full bg-[#C98C63] text-white text-xs font-bold cursor-pointer">
+                    {editingProduct ? '변경사항 반영' : '굿즈숍 출시 등록'}
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => { setProductFormOpen(false); setEditingProduct(null); }}
+                    className="px-5 py-2 rounded-full bg-gray-100 text-gray-600 text-xs font-bold cursor-pointer"
+                  >
+                    취소
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Products Grid list */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {products.map((p) => (
+                <div key={p.id} className="p-4 bg-white dark:bg-[#27221E] border border-[#F6EFE7] dark:border-[#3D3530] rounded-2xl flex items-center justify-between gap-4 text-xs">
+                  <div className="flex gap-3 items-center min-w-0">
+                    <img src={p.imageUrl} alt="" className="w-12 h-12 rounded-xl object-cover shrink-0" referrerPolicy="no-referrer" />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-serif font-bold text-gray-900 dark:text-gray-100 truncate text-sm">{p.name}</span>
+                        <span className="px-1.5 py-0.5 bg-amber-50 dark:bg-amber-950/40 text-[#A26745] font-semibold rounded text-[10px] shrink-0">
+                          {p.category}
+                        </span>
+                        {p.isFeatured && (
+                          <span className="px-1.5 py-0.5 bg-rose-50 text-rose-500 font-semibold rounded text-[10px] shrink-0">
+                            추천
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-gray-400 line-clamp-1 mt-0.5">{p.description}</p>
+                      <div className="flex gap-3 text-[10px] text-gray-500 mt-1">
+                        <span>단가: <b className="text-gray-700 dark:text-gray-300">{p.price.toLocaleString()}원</b></span>
+                        <span>재고: <b className={p.stock === 0 ? "text-rose-500 font-bold" : "text-gray-700 dark:text-gray-300"}>{p.stock}개</b></span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Actions */}
+                  <div className="flex gap-1.5 shrink-0">
+                    <button
+                      onClick={() => handleEditProductClick(p)}
+                      className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-500 border border-gray-100 cursor-pointer"
+                      title="상품 수정"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteProductClick(p.id)}
+                      className="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-500 border border-rose-100 cursor-pointer"
+                      title="상품 삭제"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>

@@ -94,6 +94,9 @@ interface AppContextType {
   adminAddClass: (newClass: Omit<WorkshopClass, 'id' | 'rating' | 'reviewCount'>) => Promise<void>;
   adminUpdateClass: (classId: string, updatedClass: Partial<WorkshopClass>) => Promise<void>;
   adminDeleteClass: (classId: string) => Promise<void>;
+  adminAddProduct: (newProduct: Omit<ProductItem, 'id' | 'wishlistCount'>) => Promise<void>;
+  adminUpdateProduct: (productId: string, updatedProduct: Partial<ProductItem>) => Promise<void>;
+  adminDeleteProduct: (productId: string) => Promise<void>;
   adminApproveBooking: (bookingId: string) => Promise<void>;
   adminAttendBooking: (bookingId: string) => Promise<void>;
   adminCancelBooking: (bookingId: string) => Promise<void>;
@@ -1075,6 +1078,45 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const adminAddProduct = async (newProduct: Omit<ProductItem, 'id' | 'wishlistCount'>) => {
+    const productId = `prod-${Date.now()}`;
+    const fullProduct: ProductItem = {
+      ...newProduct,
+      id: productId,
+      wishlistCount: 0
+    };
+
+    setProducts([fullProduct, ...products]);
+
+    try {
+      await setDoc(doc(db, 'products', productId), fullProduct);
+    } catch (e) {
+      console.warn("Admin add product failed:", e);
+    }
+  };
+
+  const adminUpdateProduct = async (productId: string, updatedProduct: Partial<ProductItem>) => {
+    const updated = products.map(p => p.id === productId ? { ...p, ...updatedProduct } : p);
+    setProducts(updated);
+
+    try {
+      await updateDoc(doc(db, 'products', productId), updatedProduct);
+    } catch (e) {
+      console.warn("Admin update product failed:", e);
+    }
+  };
+
+  const adminDeleteProduct = async (productId: string) => {
+    const updated = products.filter(p => p.id !== productId);
+    setProducts(updated);
+
+    try {
+      await deleteDoc(doc(db, 'products', productId));
+    } catch (e) {
+      console.warn("Admin delete product failed:", e);
+    }
+  };
+
   const adminApproveBooking = async (bookingId: string) => {
     const updated = bookings.map(b => b.id === bookingId ? { ...b, status: 'approved' as const } : b);
     setBookings(updated);
@@ -1217,6 +1259,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       adminAddClass,
       adminUpdateClass,
       adminDeleteClass,
+      adminAddProduct,
+      adminUpdateProduct,
+      adminDeleteProduct,
       adminApproveBooking,
       adminAttendBooking,
       adminCancelBooking,
