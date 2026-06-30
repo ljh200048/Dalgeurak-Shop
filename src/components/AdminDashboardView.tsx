@@ -16,7 +16,8 @@ import {
   AlertCircle,
   Clock,
   Send,
-  RefreshCw
+  RefreshCw,
+  Download
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -189,6 +190,48 @@ export default function AdminDashboardView() {
         setIsRecreating(false);
       }
     }
+  };
+
+  const handleExportXML = () => {
+    let xmlContent = `<?xml version="1.0" encoding="UTF-8"?>\n<classes-catalog>\n`;
+    xmlContent += `  <shop>\n`;
+    xmlContent += `    <name>달그락 상점</name>\n`;
+    xmlContent += `    <description>손으로 만드는 작은 행복, 감성 공방 예약 플랫폼 및 에디션 편집숍</description>\n`;
+    xmlContent += `    <homepage>https://ais-pre-pvsqmwdg5spjv3c3yeazr3-554240967075.asia-northeast1.run.app/</homepage>\n`;
+    xmlContent += `  </shop>\n\n`;
+
+    classes.forEach(c => {
+      xmlContent += `  <class>\n`;
+      xmlContent += `    <id>${c.id}</id>\n`;
+      xmlContent += `    <name>${c.name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</name>\n`;
+      xmlContent += `    <isFreeTrial>${!!c.isFreeTrial}</isFreeTrial>\n`;
+      xmlContent += `    <price>${c.price}</price>\n`;
+      xmlContent += `    <level>${c.level}</level>\n`;
+      xmlContent += `    <duration>${c.duration}</duration>\n`;
+      xmlContent += `    <maxPeople>${c.maxPeople}</maxPeople>\n`;
+      xmlContent += `    <imageUrl>${c.imageUrl.replace(/&/g, '&amp;')}</imageUrl>\n`;
+      xmlContent += `    <rating>${c.rating || 0}</rating>\n`;
+      xmlContent += `    <reviewCount>${c.reviewCount || 0}</reviewCount>\n`;
+      xmlContent += `    <categories>\n`;
+      c.categories.forEach(cat => {
+        xmlContent += `      <category>${cat}</category>\n`;
+      });
+      xmlContent += `    </categories>\n`;
+      const cleanIntro = (c.description || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      xmlContent += `    <intro>${cleanIntro}</intro>\n`;
+      xmlContent += `  </class>\n`;
+    });
+    xmlContent += `</classes-catalog>`;
+
+    const blob = new Blob([xmlContent], { type: 'application/xml' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `dalgurak_classes_${new Date().toISOString().split('T')[0]}.xml`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // Handle Notice Posting
@@ -373,6 +416,13 @@ export default function AdminDashboardView() {
             <div className="flex justify-between items-center flex-wrap gap-4">
               <h3 className="font-serif font-bold text-base text-[#2E2A27]">공방 운영 클래스 목록 ({classes.length}종)</h3>
               <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleExportXML}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-bold rounded-full cursor-pointer focus:outline-none border border-blue-500/20"
+                >
+                  <Download className="w-3.5 h-3.5" /> XML 내보내기
+                </button>
                 <button
                   type="button"
                   onClick={handleRecreateAll}

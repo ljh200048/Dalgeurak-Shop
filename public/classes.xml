@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classes-catalog>
+  <shop>
+    <name>달그락 상점</name>
+    <description>손으로 만드는 작은 행복, 감성 공방 예약 플랫폼 및 에디션 편집숍</description>
+    <homepage>https://ais-pre-pvsqmwdg5spjv3c3yeazr3-554240967075.asia-northeast1.run.app/</homepage>
+  </shop>
+
+  <!-- 1. 감성 한 스푼 가죽 카드지갑 만들기 -->
+  <class>
+    <id>class-1</id>
+    <name>감성 한 스푼 가죽 카드지갑 만들기</name>
+    <isFreeTrial>false</isFreeTrial>
+    <price>35000</price>
+    <level>초급</level>
+    <duration>2시간</duration>
+    <maxPeople>6</maxPeople>
+    <imageUrl>https://images.unsplash.com/photo-1590874103328-eac38a683ce7?auto=format&fit=crop&q=80&w=600</imageUrl>
+    <rating>4.9</rating>
+    <reviewCount>124</reviewCount>
+    <categories>
+      <category>가죽공예</category>
+      <category>지갑</category>
+      <category>이니셜</category>
+      <category>실용성</category>
+    </categories>
+    <intro>고급 이탈리아 천연 베지터블 가죽을 직접 재단하고 새들 스티치 바느질 공정으로 세상에 단 하나뿐인 이니셜 각인 지갑을 완성해보세요.</intro>
+  </class>
+
+  <!-- 2. 햇살 가득 선캐처 모빌 클래스 -->
+  <class>
+    <id>class-2</id>
+    <name>햇살 가득 선캐처 모빌 클래스</name>
+    <isFreeTrial>false</isFreeTrial>
+    <price>28000</price>
+    <level>초급</level>
+    <duration>1시간 30분</duration>
+    <maxPeople>8</maxPeople>
+    <imageUrl>https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&q=80&w=600</imageUrl>
+    <rating>4.8</rating>
+    <reviewCount>85</reviewCount>
+    <categories>
+      <category>모빌</category>
+      <category>인테리어</category>
+      <category>크리스탈</category>
+      <category>선캐처</category>
+    </categories>
+    <intro>창가에 흐르는 고운 빛의 파편, 영롱한 오스트리아 크리스탈 비즈와 황동 프레임을 조합하여 방 안 가득 무지개를 띄우는 나만의 감성 선캐처 모빌을 엮어봅니다.</intro>
+  </class>
+
+  <!-- 3. 아로마 플라워 왁스 타블렛 (고체 방향제) -->
+  <class>
+    <id>class-3</id>
+    <name>아로마 플라워 왁스 타블렛 (고체 방향제)</name>
+    <isFreeTrial>false</isFreeTrial>
+    <price>22000</price>
+    <level>입문</level>
+    <duration>1시간 20분</duration>
+    <maxPeople>8</maxPeople>
+    <imageUrl>https://images.unsplash.com/photo-1603006905003-be475563bc59?auto=format&fit=crop&q=80&w=600</imageUrl>
+    <rating>4.7</rating>
+    <reviewCount>92</reviewCount>
+    <categories>
+      <category>방향제</category>
+      <category>플라워</category>
+      <category>아로마</category>
+      <category>선물</category>
+    </categories>
+    <intro>천연 천연 소이 왁스에 드라이 플라워와 프리저브드 꽃들을 아름답게 올린 인테리어 방향 장식 소품을 만듭니다.</intro>
+  </class>
+
+  <!-- 4. 라탄 원형 트레이 & 코스터 공예 -->
+  <class>
+    <id>class-4</id>
+    <name>라탄 원형 트레이 &amp; 코스터 공예</name>
+    <isFreeTrial>false</isFreeTrial>
+    <price>32000</price>
+    <level>중급</level>
+    <duration>2시간</duration>
+    <maxPeople>6</maxPeople>
+    <imageUrl>https://images.unsplash.com/photo-1595171731616-54622610d1be?auto=format&fit=crop&q=80&w=600</imageUrl>
+    <rating>4.9</rating>
+    <reviewCount>56</reviewCount>
+    <categories>
+      <category>라탄공예</category>
+      <category>트레이</category>
+      <category>리빙</category>
+      <category>네추럴</category>
+    </categories>
+    <intro>인도네시아산 프리미엄 라탄 환심을 따뜻한 물에 적셔 한 줄씩 교차해 짜 올리는 전통 바구니 공예 기법을 익힙니다.</intro>
+  </class>
+
+  <!-- 5. 반려 식물 미니 유리 정원 (테라리움) -->
+  <class>
+    <id>class-5</id>
+    <name>반려 식물 미니 유리 정원 (테라리움)</name>
+    <isFreeTrial>false</isFreeTrial>
+    <price>38000</price>
+    <level>초급</level>
+    <duration>1시간 30분</duration>
+    <maxPeople>6</maxPeople>
+    <imageUrl>https://images.unsplash.com/photo-1463936575829-25148e1db1b8?auto=format&fit=crop&q=80&w=600</imageUrl>
+    <rating>4.6</rating>
+    <reviewCount>41</reviewCount>
+    <categories>
+      <category>가드닝</category>
+      <category>테라리움</category>
+      <category>힐링</category>
+      <category>반려식물</category>
+    </categories>
+    <intro>유리 용기 속에 조용히 살아 숨쉬는 자연을 축소하여 담아내어 가꾸어 나가는 미니 가드닝 세션입니다.</intro>
+  </class>
+
+  <!-- 6. 아크릴 & 참 시그니처 키링 만들기 -->
+  <class>
+    <id>class-6</id>
+    <name>아크릴 &amp; 참 시그니처 키링 만들기</name>
+    <isFreeTrial>false</isFreeTrial>
+    <price>15000</price>
+    <level>입문</level>
+    <duration>1시간</duration>
+    <maxPeople>10</maxPeople>
+    <imageUrl>https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&q=80&w=600</imageUrl>
+    <rating>4.8</rating>
+    <reviewCount>67</reviewCount>
+    <categories>
+      <category>키링</category>
+      <category>아크릴</category>
+      <category>이니셜</category>
+      <category>참액세서리</category>
+    </categories>
+    <intro>투명, 파스텔, 우드 아크릴 펜던트와 수백종의 이니셜 참을 사용하여 부담 없이 손쉽게 나만의 감성을 달그락 조립할 수 있습니다.</intro>
+  </class>
+
+  <!-- 7. 보호와 축복의 드림캐처 만들기 -->
+  <class>
+    <id>class-7</id>
+    <name>보호와 축복의 드림캐처 만들기</name>
+    <isFreeTrial>false</isFreeTrial>
+    <price>25000</price>
+    <level>중급</level>
+    <duration>2시간</duration>
+    <maxPeople>4</maxPeople>
+    <imageUrl>https://images.unsplash.com/photo-1515516089376-88db1e26e9c0?auto=format&fit=crop&q=80&w=600</imageUrl>
+    <rating>4.9</rating>
+    <reviewCount>15</reviewCount>
+    <categories>
+      <category>드림캐처</category>
+      <category>인테리어</category>
+      <category>실공예</category>
+      <category>보호</category>
+    </categories>
+    <intro>악몽을 거르고 좋은 꿈을 안겨준다는 인디언 전설의 침실 인테리어 장식, 드림캐처를 제작합니다.</intro>
+  </class>
+
+  <!-- 8. 크리스탈 레진아트 바다 컵받침 & 트레이 -->
+  <class>
+    <id>class-8</id>
+    <name>크리스탈 레진아트 바다 컵받침 &amp; 트레이</name>
+    <isFreeTrial>false</isFreeTrial>
+    <price>35000</price>
+    <level>고급</level>
+    <duration>2시간 30분</duration>
+    <maxPeople>4</maxPeople>
+    <imageUrl>https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?auto=format&fit=crop&q=80&w=600</imageUrl>
+    <rating>5.0</rating>
+    <reviewCount>22</reviewCount>
+    <categories>
+      <category>레진아트</category>
+      <category>레진</category>
+      <category>바다</category>
+      <category>컵받침</category>
+    </categories>
+    <intro>액체 레진과 청량한 안료를 이용해 바다의 영롱한 물결과 밀려드는 흰 파도를 그대로 응고시켜 간직하는 레진 클래스입니다.</intro>
+  </class>
+
+  <!-- 9. 친환경 석고 방향제 & 리프레셔 -->
+  <class>
+    <id>class-9</id>
+    <name>친환경 석고 방향제 &amp; 리프레셔</name>
+    <isFreeTrial>false</isFreeTrial>
+    <price>20000</price>
+    <level>초급</level>
+    <duration>1시간 30분</duration>
+    <maxPeople>6</maxPeople>
+    <imageUrl>https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=600</imageUrl>
+    <rating>4.7</rating>
+    <reviewCount>19</reviewCount>
+    <categories>
+      <category>석고방향제</category>
+      <category>방향제</category>
+      <category>향기</category>
+      <category>플라워</category>
+    </categories>
+    <intro>천연 석고 분말에 기분 좋은 오일을 믹싱해 굳히는 방향제입니다.</intro>
+  </class>
+
+  <!-- 10. 세라믹 머그컵 라인 드로잉 -->
+  <class>
+    <id>class-10</id>
+    <name>세라믹 머그컵 라인 드로잉</name>
+    <isFreeTrial>false</isFreeTrial>
+    <price>28000</price>
+    <level>초급</level>
+    <duration>2시간</duration>
+    <maxPeople>6</maxPeople>
+    <imageUrl>https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&q=80&w=600</imageUrl>
+    <rating>4.9</rating>
+    <reviewCount>38</reviewCount>
+    <categories>
+      <category>머그컵</category>
+      <category>드로잉</category>
+      <category>세라믹</category>
+      <category>식기</category>
+    </categories>
+    <intro>도자기 전용 독일제 안료와 라이너 펜으로 자신만의 고유한 드로잉을 기록합니다.</intro>
+  </class>
+
+  <!-- 11. [무료 이벤트] 오프닝 달그락 감성 디퓨저 미니 체험 클래스 -->
+  <class>
+    <id>class-free-event</id>
+    <name>[무료 이벤트] 오프닝 달그락 감성 디퓨저 미니 체험 클래스</name>
+    <isFreeTrial>true</isFreeTrial>
+    <price>0</price>
+    <level>입문</level>
+    <duration>45분</duration>
+    <maxPeople>8</maxPeople>
+    <imageUrl>https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=600</imageUrl>
+    <rating>5.0</rating>
+    <reviewCount>12</reviewCount>
+    <categories>
+      <category>디퓨저</category>
+      <category>무료</category>
+      <category>이벤트</category>
+      <category>선물</category>
+    </categories>
+    <intro>달그락 상점의 정식 오픈을 기념하여 가볍게 손끝의 기쁨을 느낄 수 있는 미니 디퓨저 무료 체험 세션입니다.</intro>
+  </class>
+
+  <!-- 12. [무료 체험] 달그락 시그니처 감성 DIY 소품 키트 제작 체험 -->
+  <class>
+    <id>class-free-kit</id>
+    <name>[무료 체험] 달그락 시그니처 감성 DIY 소품 키트 제작 체험</name>
+    <isFreeTrial>true</isFreeTrial>
+    <price>0</price>
+    <level>입문</level>
+    <duration>30분</duration>
+    <maxPeople>10</maxPeople>
+    <imageUrl>https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&q=80&w=600</imageUrl>
+    <rating>4.9</rating>
+    <reviewCount>42</reviewCount>
+    <categories>
+      <category>키트</category>
+      <category>무료</category>
+      <category>체험</category>
+      <category>DIY</category>
+    </categories>
+    <intro>가정과 야외 어디서나 가볍게 시도할 수 있는 달그락 시그니처 패키징 소품 키트 조립 시연 및 직접 가공 체험입니다.</intro>
+  </class>
+
+  <!-- 13. [무료 체험] 달그락 상점 커스텀 오너먼트 클래스 -->
+  <class>
+    <id>class-free-shop-event</id>
+    <name>[무료 체험] 달그락 상점 커스텀 오너먼트 클래스</name>
+    <isFreeTrial>true</isFreeTrial>
+    <price>0</price>
+    <level>입문</level>
+    <duration>1시간</duration>
+    <maxPeople>6</maxPeople>
+    <imageUrl>https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&q=80&w=600</imageUrl>
+    <rating>5.0</rating>
+    <reviewCount>8</reviewCount>
+    <categories>
+      <category>오너먼트</category>
+      <category>커스텀</category>
+      <category>무료</category>
+      <category>감성</category>
+    </categories>
+    <intro>신규 회원 웰컴 혜택으로 제공되는 달그락 시그니처 감성 오너먼트 제작 클래스입니다.</intro>
+  </class>
+
+  <!-- 14. 달그락 VIP 콤보 시그니처 클래스 -->
+  <class>
+    <id>class-workshop-signature</id>
+    <name>달그락 VIP 콤보 시그니처 클래스</name>
+    <isFreeTrial>false</isFreeTrial>
+    <price>65000</price>
+    <level>중급</level>
+    <duration>3시간</duration>
+    <maxPeople>4</maxPeople>
+    <imageUrl>https://images.unsplash.com/photo-1457369804613-52c61a468e7d?auto=format&fit=crop&q=80&w=600</imageUrl>
+    <rating>4.9</rating>
+    <reviewCount>14</reviewCount>
+    <categories>
+      <category>가죽</category>
+      <category>아로마</category>
+      <category>콤보</category>
+      <category>VIP</category>
+    </categories>
+    <intro>달그락 상점의 베스트 강사들이 설계한 종합 올인원 수제 공예 코스입니다.</intro>
+  </class>
+</classes-catalog>
