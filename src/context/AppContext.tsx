@@ -157,6 +157,8 @@ interface AppContextType {
   recreateAllClasses: () => Promise<void>;
   telegramConfig: { botToken: string; chatId: string; isEnabled: boolean };
   updateTelegramConfig: (config: { botToken: string; chatId: string; isEnabled: boolean }) => Promise<void>;
+  homeHeroImage: string;
+  updateHomeHeroImage: (url: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -183,6 +185,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     chatId: '',
     isEnabled: false
   });
+  const [homeHeroImage, setHomeHeroImage] = useState<string>('');
   
   const [autoApproveBookings, setAutoApproveBookingsState] = useState<boolean>(() => {
     try {
@@ -471,6 +474,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             chatId: getStorage<string>('telegram_chat_id', envChatId),
             isEnabled: getStorage<boolean>('telegram_enabled', !!(envToken && envChatId))
           });
+        }
+
+        // Load Home hero image settings
+        try {
+          const homeSnap = await getDoc(doc(db, 'settings', 'home'));
+          if (homeSnap.exists()) {
+            setHomeHeroImage(homeSnap.data().heroImageUrl || '');
+          } else {
+            setHomeHeroImage('');
+          }
+        } catch (e) {
+          console.warn("Failed to load home config from firestore:", e);
+          setHomeHeroImage(getStorage<string>('home_hero_image', ''));
         }
 
       } catch (err) {
@@ -814,6 +830,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await setDoc(doc(db, 'settings', 'telegram'), config);
     } catch (e) {
       console.warn("Could not save telegram config to Firestore:", e);
+    }
+  };
+
+  const updateHomeHeroImage = async (url: string) => {
+    setHomeHeroImage(url);
+    setStorage('home_hero_image', url);
+    try {
+      await setDoc(doc(db, 'settings', 'home'), { heroImageUrl: url });
+    } catch (e) {
+      console.warn("Could not save home config to Firestore:", e);
     }
   };
 
@@ -1419,7 +1445,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       adminDeleteReview,
       recreateAllClasses,
       telegramConfig,
-      updateTelegramConfig
+      updateTelegramConfig,
+      homeHeroImage,
+      updateHomeHeroImage
     }}>
       {children}
     </AppContext.Provider>

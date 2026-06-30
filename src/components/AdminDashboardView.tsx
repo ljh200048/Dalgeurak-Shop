@@ -46,7 +46,9 @@ export default function AdminDashboardView() {
     telegramConfig,
     updateTelegramConfig,
     autoApproveBookings,
-    setAutoApproveBookings
+    setAutoApproveBookings,
+    homeHeroImage,
+    updateHomeHeroImage
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'stats' | 'classes' | 'products' | 'bookings' | 'notices' | 'reviews' | 'telegram'>('stats');
@@ -57,12 +59,20 @@ export default function AdminDashboardView() {
   const [telegramEnabled, setTelegramEnabled] = useState(telegramConfig.isEnabled || false);
   const [testSending, setTestSending] = useState(false);
 
+  // Home Hero Image local states
+  const [currentHomeHeroImage, setCurrentHomeHeroImage] = useState(homeHeroImage || '');
+  const [isSavingHomeImage, setIsSavingHomeImage] = useState(false);
+
   // Sync state if context config updates
   React.useEffect(() => {
     setTelegramBotToken(telegramConfig.botToken);
     setTelegramChatId(telegramConfig.chatId);
     setTelegramEnabled(telegramConfig.isEnabled);
   }, [telegramConfig]);
+
+  React.useEffect(() => {
+    setCurrentHomeHeroImage(homeHeroImage);
+  }, [homeHeroImage]);
 
   // Dialog / Edit states
   const [classFormOpen, setClassFormOpen] = useState(false);
@@ -363,7 +373,7 @@ export default function AdminDashboardView() {
           { id: 'bookings', label: '📅 수강 예약 승인/출석' },
           { id: 'notices', label: '📢 공지 & 배너 작성' },
           { id: 'reviews', label: '⭐ 수강 후기 모니터링' },
-          { id: 'telegram', label: '✈️ 텔레그램 알림 연동' }
+          { id: 'telegram', label: '⚙️ 시스템 & 홈 배경 설정' }
         ].map(tab => (
           <button
             key={tab.id}
@@ -1091,10 +1101,48 @@ export default function AdminDashboardView() {
           </div>
         )}
 
-        {/* TAB 6: telegram (텔레그램 연동 설정) */}
+        {/* TAB 6: settings & telegram (시스템 & 홈 배경 설정) */}
         {activeTab === 'telegram' && (
-          <div className="space-y-6 max-w-2xl">
+          <div className="space-y-8 max-w-2xl">
+            {/* 홈 화면 대표 이미지 설정 */}
             <div className="space-y-1">
+              <h3 className="font-serif font-bold text-base text-[#2E2A27] dark:text-[#F3EFEA]">🖼️ 홈 화면 대표 이미지 설정</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                달그락 상점 메인 화면의 대표 히어로 배경 이미지를 업로드하거나 변경할 수 있습니다.
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-[#27221E] border border-[#F6EFE7] dark:border-[#3D3530] rounded-2xl p-6 space-y-6 shadow-2xs">
+              <ProductImageUploader
+                imageUrl={currentHomeHeroImage}
+                onImageChange={setCurrentHomeHeroImage}
+                label="홈 히어로 배경 이미지 (File Upload)"
+              />
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setIsSavingHomeImage(true);
+                    try {
+                      await updateHomeHeroImage(currentHomeHeroImage);
+                      alert("홈 화면 대표 이미지가 성공적으로 반영되었습니다!");
+                    } catch (e: any) {
+                      alert(`저장 실패: ${e.message}`);
+                    } finally {
+                      setIsSavingHomeImage(false);
+                    }
+                  }}
+                  disabled={isSavingHomeImage}
+                  className="px-5 py-2.5 text-xs font-bold rounded-xl bg-[#C98C63] hover:bg-[#A26745] disabled:opacity-50 text-white transition-colors cursor-pointer"
+                >
+                  {isSavingHomeImage ? '배경 변경 중...' : '홈 배경 이미지 적용'}
+                </button>
+              </div>
+            </div>
+
+            {/* 텔레그램 알림 */}
+            <div className="space-y-1 pt-4">
               <h3 className="font-serif font-bold text-base text-[#2E2A27] dark:text-[#F3EFEA]">✈️ 실시간 텔레그램 예약 알림 연동</h3>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 수강생이 체험 또는 일반 예약을 완료할 때마다 관리자의 개인 텔레그램 채팅방/채널로 상세 예약 정보를 즉시 푸시 알림으로 수신합니다.
@@ -1159,7 +1207,7 @@ export default function AdminDashboardView() {
                   type="button"
                   onClick={async () => {
                     if (!telegramBotToken || !telegramChatId) {
-                      alert("테스트 발송을 위해 봇 토큰과 채팅 ID를 입력해주세요.");
+                      alert("테스트 발송을 위해 봇 토큰 and 채팅 ID를 입력해주세요.");
                       return;
                     }
                     setTestSending(true);

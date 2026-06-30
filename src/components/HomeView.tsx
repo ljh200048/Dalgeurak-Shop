@@ -9,11 +9,11 @@ interface HomeViewProps {
 }
 
 export default function HomeView({ setView, setSelectedClassId }: HomeViewProps) {
-  const { classes, notices } = useApp();
+  const { classes, notices, homeHeroImage } = useApp();
 
   const freeTrialClasses = classes.filter(c => c.isFreeTrial);
   const featuredClasses = classes.filter(c => !c.isFreeTrial && c.isFeatured).slice(0, 4);
-  const heroImage = featuredClasses[0]?.imageUrl || "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&q=80&w=1600";
+  const heroImage = homeHeroImage || featuredClasses[0]?.imageUrl || "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&q=80&w=1600";
 
   const handleClassClick = (id: string) => {
     setSelectedClassId(id);
