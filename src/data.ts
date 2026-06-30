@@ -217,7 +217,7 @@ export const INITIAL_CLASSES: WorkshopClass[] = [
     materials: ['곡물 발효 주정 디퓨저 베이스', '천연 아로마 향료 5종', '미니 유리 공병 (50ml)'],
     provided: ['웰컴 티', '선물용 패키징'],
     completedItem: '오프닝 미니 디퓨저 1구 (50ml)',
-    precautions: ['해당 클래는 100% 무료 이벤트로 진행되므로, 계정당 1회만 예약 가능합니다.'],
+    precautions: ['해당 클래스는 100% 무료 이벤트로 진행되므로, 편하게 예약 가능합니다.'],
     refundPolicy: '무료 이벤트로 환불금은 발생하지 않으나, 불참 시 다른 수강생을 위해 꼭 사전 취소 부탁드립니다.',
     isFeatured: true,
     isFreeTrial: true
@@ -238,7 +238,7 @@ export const INITIAL_CLASSES: WorkshopClass[] = [
     materials: ['달그락 DIY 가공 키트 세트', '미니 우드 스틱', '감성 무지 부직포 파우치'],
     provided: ['웰컴 음료', '완성품 전용 에코 쇼핑백'],
     completedItem: '달그락 시그니처 DIY 소품 키트 완제품 1개',
-    precautions: ['해당 체험은 1인당 일평생 1회에 한하여 무료 예약 및 수강이 지원됩니다.'],
+    precautions: ['해당 체험은 100% 무료 예약 및 수강이 지원됩니다.'],
     refundPolicy: '무료 체험이므로 취소 시 위약금 및 공제 금액은 전혀 없으나, 노쇼 예방과 원활한 진행을 위해 불참 시 최소 1일 전 취소 부탁드립니다.',
     isFeatured: true,
     isFreeTrial: true
@@ -259,7 +259,7 @@ export const INITIAL_CLASSES: WorkshopClass[] = [
     materials: ['달그락 일러스트 드로잉 카드 1세트', '천연 아로마 프래그런스 향료 3종 체험', '미니 우드 참 오너먼트 제작 세트'],
     provided: ['웰컴 오가닉 플라워 블렌딩 티 1잔', '달그락 수제 크래프트 포장 봉투', '수공예 작가 소책자 가이드북'],
     completedItem: '달그락 커스텀 감성 오너먼트 1개 + 수제 엽서 세트',
-    precautions: ['보다 쾌적한 체험 환경 유지를 위해 동시 참여 인원이 제한되므로, 예약 정시 10분 전까지 반드시 입실을 완료해 주시기 바랍니다.', '본 세션은 신규 고객들을 위한 무상 제공 세션이므로 중복 수강은 정중히 사양합니다.'],
+    precautions: ['보다 쾌적한 체험 환경 유지를 위해 동시 참여 인원이 제한되므로, 예약 정시 10분 전까지 반드시 입실을 완료해 주시기 바랍니다.'],
     refundPolicy: '100% 무료 체험 프로그램으로 수강 취소 위약금은 없습니다. 단, 한정 인원 예약제로 진행되어 부득이한 불참 시 최소 1일 전까지 마이페이지에서 예약 취소 부탁드립니다.',
     isFeatured: true,
     isFreeTrial: true

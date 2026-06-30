@@ -679,25 +679,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const selClass = classes.find(c => c.id === classId);
     if (!selClass) throw new Error("선택하신 클래스가 존재하지 않습니다.");
 
-    // Check free trial limitation
+    // Check free trial limitation (Bypassed to allow multiple bookings as requested)
     if (selClass.isFreeTrial) {
-      const emailToCheck = currentUser?.email || guestEmail;
-      const phoneToCheck = guestPhone;
-
-      const hasExistingFreeTrialBooking = bookings.some(b => {
-        const bClass = classes.find(c => c.id === b.classId);
-        if (!bClass?.isFreeTrial || b.status === 'cancelled') return false;
-
-        if (currentUser && b.userId === currentUser.uid) return true;
-        if (emailToCheck && b.userEmail === emailToCheck) return true;
-        if (phoneToCheck && b.guestPhone === phoneToCheck) return true;
-
-        return false;
-      });
-
-      if (hasExistingFreeTrialBooking) {
-        throw new Error("무료 체험 클래스는 1인당 1회만 예약 가능합니다. 이미 신청 완료되었거나 예약 대기 중인 무료 체험 내역이 존재합니다.");
-      }
+      // Free trial limit check has been disabled to allow multiple reservations
     }
 
     const basePrice = (selClass.isFreeTrial ? 0 : selClass.price) * headCount;

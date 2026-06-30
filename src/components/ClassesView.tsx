@@ -699,7 +699,7 @@ export default function ClassesView({ setView, setSelectedClassId, initialFilter
                       <div className="space-y-0.5">
                         <span className="text-[10px] font-bold text-amber-600 block">무료 체험 유의사항</span>
                         <p className="text-[10px] text-gray-400 leading-relaxed">
-                          달그락 키트 무료체험은 1인당 평생 1회만 제공됩니다. 불참 시 가급적 최소 하루 전에 예약 취소해 주세요!
+                          달그락 키트 무료체험 예약입니다. 불참 시 가급적 최소 하루 전에 예약 취소해 주세요!
                         </p>
                       </div>
                     </div>
